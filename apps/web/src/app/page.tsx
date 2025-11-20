@@ -1,575 +1,585 @@
 "use client";
 
-import React, { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Button } from "@repo/ui/button"; 
-import { Card } from "@repo/ui/card";
+import React, { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence, useScroll, useTransform, useSpring } from "framer-motion";
 import { 
   Building2, ShieldCheck, FileSpreadsheet, HardHat, 
   Layers, Smartphone, Search, Activity, FileCheck, 
   Users, Play, ArrowRight, QrCode, Mic, Trophy, 
-  Lock, FileDigit, MapPin, CheckCircle2
+  Lock, FileDigit, MapPin, CheckCircle2, TrendingUp,
+  Menu, X, ChevronRight
 } from "lucide-react";
+// import { cn } from "@/lib/utils"; 
 
-// --- Animation Variants ---
-const fadeInUp = {
-  hidden: { opacity: 0, y: 40 },
-  visible: { 
-    opacity: 1, 
-    y: 0, 
-    transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] } // Custom Bezier for "Premium" feel
+import { type ClassValue, clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
+
+function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
+
+// --- UI Components (Embedded for single-file portability) ---
+
+const Button = React.forwardRef<HTMLButtonElement, React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary' | 'outline' | 'ghost' | 'glass' }>(
+  ({ className, variant = 'primary', ...props }, ref) => {
+    const variants = {
+      primary: "bg-brand-900 text-brand-50 hover:bg-brand-800 shadow-xl shadow-brand-900/20 border border-transparent",
+      outline: "bg-transparent border border-brand-200 text-brand-900 hover:bg-brand-50 hover:border-brand-300",
+      ghost: "bg-transparent text-brand-600 hover:text-brand-900 hover:bg-brand-100/50",
+      glass: "bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white/20"
+    };
+    return (
+      <button
+        ref={ref}
+        className={cn("inline-flex items-center justify-center rounded-md text-sm font-medium transition-all duration-300 h-11 px-6 active:scale-95 disabled:opacity-50", variants[variant], className)}
+        {...props}
+      />
+    );
   }
-};
+);
+Button.displayName = "Button";
 
-const staggerContainer = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { staggerChildren: 0.15 } }
-};
-
-// --- Components ---
-
-const Logo = () => (
-  <div className="flex items-center gap-2 select-none">
-    <div className="flex items-end gap-1 h-8">
-      <motion.div initial={{ height: 10 }} animate={{ height: 32 }} transition={{ duration: 1 }} className="w-1.5 bg-brand-900 rounded-sm"></motion.div>
-      <motion.div initial={{ height: 10 }} animate={{ height: 20 }} transition={{ duration: 1.2 }} className="w-1.5 bg-brand-600 rounded-sm"></motion.div>
-      <motion.div initial={{ height: 10 }} animate={{ height: 24 }} transition={{ duration: 0.8 }} className="w-1.5 bg-brand-700 rounded-sm"></motion.div>
-    </div>
-    <span className="font-bold text-xl tracking-tighter text-brand-900">BRIXA</span>
+const Card = ({ children, className }: { children: React.ReactNode, className?: string }) => (
+  <div className={cn(
+    "relative overflow-hidden rounded-2xl border border-brand-100 bg-white p-6 shadow-[0_4px_20px_-4px_rgba(38,28,21,0.05)] transition-all duration-500 hover:shadow-[0_8px_30px_-4px_rgba(38,28,21,0.1)] hover:border-brand-200", 
+    className
+  )}>
+    {children}
   </div>
 );
 
-const Badge = ({ children, className }: { children: React.ReactNode, className?: string }) => (
-  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-brand-100 text-brand-800 border border-brand-200 ${className}`}>
-    {children}
-  </span>
+// --- Brand Logo ---
+const Logo = () => (
+  <div className="flex items-center gap-3 select-none group cursor-pointer">
+    <div className="relative flex items-end gap-1 h-8 overflow-hidden">
+      <motion.div initial={{ y: 10 }} animate={{ y: 0 }} transition={{ duration: 0.8, ease: "circOut" }} className="w-1.5 h-8 bg-brand-900 rounded-sm" />
+      <motion.div initial={{ y: 10 }} animate={{ y: 0 }} transition={{ duration: 0.8, delay: 0.1, ease: "circOut" }} className="w-1.5 h-5 bg-brand-600 rounded-sm group-hover:bg-brand-500 transition-colors" />
+      <motion.div initial={{ y: 10 }} animate={{ y: 0 }} transition={{ duration: 0.8, delay: 0.2, ease: "circOut" }} className="w-1.5 h-6 bg-brand-800 rounded-sm" />
+    </div>
+    <span className="font-serif font-bold text-2xl tracking-tight text-brand-900">BRIXA</span>
+  </div>
 );
 
+// --- Main Page ---
 export default function LandingPage() {
   const [activeTab, setActiveTab] = useState<"govt" | "engineer" | "supplier" | "public">("govt");
+  const { scrollY } = useScroll();
+  
+  // Parallax Effects
+  const heroY = useTransform(scrollY, [0, 500], [0, 150]);
+  const heroOpacity = useTransform(scrollY, [0, 300], [1, 0]);
+  const dashboardRotate = useTransform(scrollY, [0, 800], [10, 0]);
+  const dashboardScale = useTransform(scrollY, [0, 800], [0.9, 1]);
 
   return (
-    <div className="min-h-screen bg-[#FAFAF9] text-brand-900 font-sans selection:bg-brand-900 selection:text-white overflow-x-hidden">
+    <div className="min-h-screen bg-brand-50 text-brand-900 font-sans selection:bg-brand-900 selection:text-brand-50 overflow-x-hidden">
       
+      {/* Noise Texture Overlay for "Paper" Feel */}
+      <div className="fixed inset-0 z-0 opacity-40 pointer-events-none bg-noise mix-blend-multiply"></div>
+
       {/* --- Navigation --- */}
-      <nav className="fixed top-0 w-full z-50 bg-[#FAFAF9]/80 backdrop-blur-xl border-b border-brand-100/50 transition-all duration-300">
+      <motion.nav 
+        initial={{ y: -100 }}
+        animate={{ y: 0 }}
+        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+        className="fixed top-0 w-full z-50 bg-brand-50/80 backdrop-blur-xl border-b border-brand-100/50"
+      >
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
           <Logo />
           <div className="hidden md:flex gap-8 text-sm font-medium text-brand-600">
-            <a href="#ecosystem" className="hover:text-brand-900 transition-colors">Ecosystem</a>
-            <a href="#features" className="hover:text-brand-900 transition-colors">Toolkit</a>
-            <a href="#audit" className="hover:text-brand-900 transition-colors">Public Audit</a>
+            {['Ecosystem', 'Toolkit', 'Audit', 'Pricing'].map((item) => (
+              <a key={item} href={`#${item.toLowerCase()}`} className="relative hover:text-brand-900 transition-colors group">
+                {item}
+                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-brand-900 transition-all duration-300 group-hover:w-full"></span>
+              </a>
+            ))}
           </div>
           <div className="flex gap-3">
             <Button variant="ghost" size="sm">Login</Button>
-            <Button className="bg-brand-900 text-white hover:bg-brand-800 shadow-lg shadow-brand-900/20" size="sm">Get Started</Button>
+            <Button variant="primary" size="sm">Get Started</Button>
           </div>
         </div>
-      </nav>
+      </motion.nav>
 
-      <main className="pt-32">
+      <main className="relative z-10 pt-32">
         
         {/* --- Hero Section --- */}
-        <section className="relative px-6 max-w-7xl mx-auto mb-32 flex flex-col items-center text-center">
-          {/* Subtle Background Pattern */}
-          <div className="absolute inset-0 -z-10 opacity-[0.03] bg-[url('https://www.transparenttextures.com/patterns/graphy.png')]"></div>
-
+        <section className="relative px-6 max-w-7xl mx-auto mb-32 flex flex-col items-center text-center perspective-1000">
+          
           <motion.div 
-            initial="hidden" 
-            animate="visible" 
-            variants={staggerContainer}
-            className="max-w-4xl"
+            style={{ y: heroY, opacity: heroOpacity }}
+            className="max-w-5xl z-20"
           >
-            <motion.div variants={fadeInUp} className="flex justify-center mb-8">
-              <div className="px-4 py-2 rounded-full bg-white border border-brand-200 shadow-sm text-brand-600 text-xs font-bold tracking-widest uppercase flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                Live Tender Intelligence System
-              </div>
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="flex justify-center mb-8"
+            >
+              <span className="px-4 py-1.5 rounded-full bg-white border border-brand-200 text-brand-600 text-xs font-bold tracking-[0.2em] uppercase shadow-sm">
+                The OS for Infrastructure
+              </span>
             </motion.div>
             
-            <motion.h1 variants={fadeInUp} className="text-5xl md:text-7xl lg:text-8xl font-semibold tracking-tight text-brand-900 mb-8 leading-[1.05]">
-              Construction with <br/>
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-900 via-brand-600 to-brand-800">
-                Radical Integrity.
-              </span>
+            <motion.h1 
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+              className="font-serif text-6xl md:text-8xl font-medium tracking-tight text-brand-900 mb-8 leading-[1.05]"
+            >
+              Build with <br/>
+              <span className="italic text-brand-600">Radical Integrity.</span>
             </motion.h1>
 
-            <motion.p variants={fadeInUp} className="text-lg md:text-xl text-brand-500 max-w-2xl mx-auto mb-12 leading-relaxed">
-              The operating system for the new era of infrastructure. 
-              Connect <span className="text-brand-900 font-medium">Government</span>, <span className="text-brand-900 font-medium">Contractors</span>, and <span className="text-brand-900 font-medium">Citizens</span> in one transparent ledger.
+            <motion.p 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.5, duration: 1 }}
+              className="text-xl text-brand-500 max-w-2xl mx-auto mb-12 leading-relaxed font-light"
+            >
+              Connect tenders, engineers, and auditors in one luxurious ecosystem. 
+              From <span className="font-medium text-brand-900">blueprint</span> to <span className="font-medium text-brand-900">billing</span>, verify every step with AI.
             </motion.p>
 
-            <motion.div variants={fadeInUp} className="flex flex-col sm:flex-row gap-4 justify-center mb-20">
-              <Button size="lg" className="h-14 px-8 bg-brand-900 text-white hover:bg-brand-800 text-base shadow-xl">Start Free Trial</Button>
-              <Button size="lg" variant="outline" className="h-14 px-8 border-brand-200 hover:bg-white text-base">
-                <Play className="w-4 h-4 mr-2 fill-current" /> Watch 2-min Demo
-              </Button>
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6 }}
+              className="flex flex-col sm:flex-row gap-4 justify-center"
+            >
+              <Button className="h-14 px-10 text-base">Start Free Trial</Button>
+              <Button variant="outline" className="h-14 px-10 text-base">View Demo</Button>
             </motion.div>
           </motion.div>
 
-          {/* --- 3D Perspective Dashboard --- */}
+          {/* Abstract 3D Dashboard */}
           <motion.div 
-            initial={{ opacity: 0, y: 50, rotateX: 15 }}
-            animate={{ opacity: 1, y: 0, rotateX: 0 }}
-            transition={{ delay: 0.4, duration: 1.2, ease: "easeOut" }}
-            className="w-full max-w-5xl relative perspective-1000 group"
+            style={{ rotateX: dashboardRotate, scale: dashboardScale }}
+            className="mt-20 w-full max-w-6xl relative z-10"
           >
-             {/* Main Dashboard Image Container */}
-            <div className="relative z-10 bg-white rounded-t-2xl border border-brand-200 shadow-2xl overflow-hidden aspect-[16/9] md:aspect-[21/9]">
-              <div className="absolute inset-0 bg-gradient-to-b from-brand-50/50 to-white pointer-events-none"></div>
+            <div className="relative bg-white rounded-t-2xl shadow-[0_-20px_80px_-20px_rgba(0,0,0,0.1)] border border-brand-200 overflow-hidden aspect-[16/9] md:aspect-[21/9]">
               
-              {/* Mock UI Interface */}
-              <div className="p-6 grid grid-cols-12 gap-6 h-full">
-                {/* Sidebar */}
-                <div className="hidden md:block col-span-2 space-y-4 border-r border-brand-100 pr-4">
-                   <div className="h-8 w-8 rounded-lg bg-brand-900 mb-6"></div>
-                   <div className="h-2 w-20 bg-brand-100 rounded-full"></div>
-                   <div className="h-2 w-16 bg-brand-100 rounded-full"></div>
-                   <div className="h-2 w-24 bg-brand-100 rounded-full"></div>
+              {/* Top Bar Mockup */}
+              <div className="h-12 bg-brand-50 border-b border-brand-100 flex items-center px-4 gap-2">
+                <div className="flex gap-1.5">
+                  <div className="w-3 h-3 rounded-full bg-brand-200"></div>
+                  <div className="w-3 h-3 rounded-full bg-brand-200"></div>
                 </div>
+                <div className="ml-4 px-3 py-1 bg-white rounded-md text-xs text-brand-400 font-mono border border-brand-100">brixa.app/project-alpha</div>
+              </div>
+
+              {/* Dashboard Body */}
+              <div className="p-8 grid grid-cols-12 gap-8 h-full bg-[url('https://www.transparenttextures.com/patterns/graphy.png')]">
                 
-                {/* Main Content */}
-                <div className="col-span-12 md:col-span-7 space-y-6 pt-2">
-                   <div className="flex justify-between items-end border-b border-brand-100 pb-4">
-                      <div>
-                        <div className="text-xs font-bold text-brand-400 uppercase tracking-wider mb-1">Project Alpha-9</div>
-                        <div className="text-2xl font-semibold text-brand-900">Highway Expansion Phase II</div>
-                      </div>
-                      <div className="flex gap-2">
-                        <Badge className="bg-green-100 text-green-700"><CheckCircle2 size={10} className="mr-1"/> KYC Verified</Badge>
-                        <Badge>On Schedule</Badge>
+                {/* Left Col: Metrics */}
+                <div className="col-span-3 space-y-4">
+                   <div className="bg-brand-900 text-brand-50 p-5 rounded-xl shadow-lg">
+                      <div className="text-xs uppercase tracking-widest opacity-60 mb-1">Budget</div>
+                      <div className="text-2xl font-serif">₹ 2.4 Cr</div>
+                      <div className="mt-4 h-1 w-full bg-brand-700 rounded-full overflow-hidden">
+                        <motion.div 
+                          initial={{ width: 0 }}
+                          animate={{ width: "65%" }}
+                          transition={{ duration: 2, delay: 1 }}
+                          className="h-full bg-green-400"
+                        />
                       </div>
                    </div>
+                   <div className="bg-white p-5 rounded-xl border border-brand-100 shadow-sm">
+                      <div className="text-xs uppercase tracking-widest text-brand-400 mb-1">Status</div>
+                      <div className="flex items-center gap-2 text-brand-900 font-medium">
+                         <span className="relative flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                         </span>
+                         Active Site
+                      </div>
+                   </div>
+                </div>
 
-                   {/* Graph Mock */}
-                   <div className="h-32 w-full bg-brand-50 rounded-lg border border-brand-100 relative overflow-hidden flex items-end px-4 pb-0 gap-2">
-                      {[40, 65, 45, 80, 55, 90, 70].map((h, i) => (
-                        <motion.div 
-                          key={i}
-                          initial={{ height: 0 }}
-                          animate={{ height: `${h}%` }}
-                          transition={{ delay: 1 + (i * 0.1), duration: 1 }}
-                          className="w-full bg-brand-200 rounded-t-sm opacity-60 hover:opacity-100 hover:bg-brand-400 transition-colors"
-                        />
+                {/* Middle Col: Feed */}
+                <div className="col-span-6 bg-white rounded-xl border border-brand-100 shadow-sm p-6">
+                   <div className="flex justify-between items-center mb-6">
+                      <h3 className="font-bold text-brand-900">Live Site Feed</h3>
+                      <Button variant="ghost" size="sm" className="h-8 text-xs">Filter</Button>
+                   </div>
+                   <div className="space-y-4">
+                      {[1, 2].map((i) => (
+                        <div key={i} className="flex gap-4 pb-4 border-b border-brand-50 last:border-0">
+                           <div className="w-10 h-10 rounded-full bg-brand-50 flex items-center justify-center text-brand-600 border border-brand-100 shrink-0">
+                              {i === 1 ? <Mic size={18}/> : <QrCode size={18}/>}
+                           </div>
+                           <div>
+                              <div className="text-sm font-medium text-brand-900">
+                                {i === 1 ? "Engineer Log (Voice)" : "Public Audit Scan"}
+                              </div>
+                              <div className="text-xs text-brand-500 mt-1 leading-relaxed">
+                                {i === 1 ? "Unloaded 500 bags of cement at Block C. Invoice verified." : "Citizen scanned QR at Site Gate #2."}
+                              </div>
+                           </div>
+                           <div className="text-[10px] text-brand-300 ml-auto font-mono">2m ago</div>
+                        </div>
                       ))}
                    </div>
-
-                   {/* Recent Activity List */}
-                   <div className="space-y-3">
-                      <div className="flex items-center gap-4 p-3 bg-white border border-brand-100 rounded-lg shadow-sm">
-                         <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center"><Mic size={14} /></div>
-                         <div className="flex-1">
-                            <div className="text-sm font-medium text-brand-900">Site Engineer Log (Voice)</div>
-                            <div className="text-xs text-brand-500">"Unloaded 500 bags cement, Invoice #8892 verified."</div>
-                         </div>
-                         <span className="text-xs font-mono text-brand-400">10:42 AM</span>
-                      </div>
-                   </div>
                 </div>
 
-                {/* Right Panel (Auditor View) */}
-                <div className="hidden md:block col-span-3 bg-brand-900 rounded-xl p-5 text-white flex flex-col justify-between relative overflow-hidden">
-                   <div className="absolute top-0 right-0 w-32 h-32 bg-brand-700 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 opacity-50"></div>
-                   <div>
-                      <div className="text-brand-300 text-xs uppercase tracking-widest mb-2">Budget Utilized</div>
-                      <div className="text-3xl font-light">₹ 4.2 Cr</div>
-                      <div className="text-xs text-brand-400 mt-1">of ₹ 12.0 Cr Allocated</div>
-                   </div>
-                   <div className="space-y-2">
-                      <div className="w-full bg-brand-800 h-1.5 rounded-full overflow-hidden">
-                        <div className="bg-green-400 h-full w-[35%]"></div>
-                      </div>
-                      <div className="flex justify-between text-[10px] text-brand-400">
-                        <span>Spent</span>
-                        <span>35%</span>
+                {/* Right Col: Visuals */}
+                <div className="col-span-3 flex flex-col gap-4">
+                   <div className="flex-1 bg-brand-50 rounded-xl border border-brand-100 flex items-center justify-center relative overflow-hidden">
+                      <div className="absolute inset-0 flex items-end justify-around px-4 pb-4 gap-1">
+                         {[40, 70, 50, 90, 60].map((h, i) => (
+                           <motion.div 
+                             key={i}
+                             initial={{ height: 0 }}
+                             animate={{ height: `${h}%` }}
+                             transition={{ delay: 1.5 + (i * 0.1), duration: 1 }}
+                             className="w-full bg-brand-200 rounded-t-sm"
+                           />
+                         ))}
                       </div>
                    </div>
                 </div>
               </div>
             </div>
-            
-            {/* Glowing Underlight */}
-            <div className="absolute -bottom-10 left-10 right-10 h-20 bg-brand-900 blur-[80px] opacity-20 z-0"></div>
+            {/* Glow behind dashboard */}
+            <div className="absolute -bottom-10 left-10 right-10 h-40 bg-brand-900 blur-[100px] opacity-10 -z-10"></div>
           </motion.div>
         </section>
 
-        {/* --- Ecosystem Tabs (Problem Solution) --- */}
-        <section id="ecosystem" className="py-24 bg-white border-y border-brand-100">
+        {/* --- Dynamic Tabs Section --- */}
+        <section id="ecosystem" className="py-32 bg-white border-y border-brand-100 relative">
           <div className="max-w-7xl mx-auto px-6">
-            <div className="mb-12 text-center">
-              <h2 className="text-3xl font-semibold text-brand-900 mb-4">Orchestrating the Chaos</h2>
-              <p className="text-brand-500 max-w-2xl mx-auto">A unified platform solving the fragmentation between tender allocation and brick-laying.</p>
-            </div>
-
-            {/* Tab Triggers */}
-            <div className="flex flex-wrap justify-center gap-2 mb-16">
-              {(['govt', 'engineer', 'supplier', 'public'] as const).map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`px-6 py-3 rounded-full text-sm font-medium transition-all duration-300 border ${
-                    activeTab === tab 
-                      ? "bg-brand-900 text-white border-brand-900 shadow-lg transform scale-105" 
-                      : "bg-white text-brand-600 border-brand-100 hover:border-brand-300 hover:bg-brand-50"
-                  }`}
-                >
-                  {tab === 'govt' && "Government & Tenders"}
-                  {tab === 'engineer' && "Engineers & Contractors"}
-                  {tab === 'supplier' && "Suppliers & Hardware"}
-                  {tab === 'public' && "Public & Transparency"}
-                </button>
-              ))}
-            </div>
-
-            {/* Tab Content */}
-            <div className="min-h-[450px]">
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={activeTab}
-                  initial={{ opacity: 0, y: 20, scale: 0.98 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -20, scale: 0.98 }}
-                  transition={{ duration: 0.4 }}
-                  className="grid md:grid-cols-2 gap-12 items-center"
-                >
-                  {/* Text Content */}
-                  <div className="space-y-8">
-                    <div>
-                      <h3 className="text-4xl font-medium text-brand-900 leading-tight">
-                        {activeTab === 'govt' && <span>End Tender Corruption.<br/><span className="text-brand-500">Award based on data, not connections.</span></span>}
-                        {activeTab === 'engineer' && <span>Build Your Reputation.<br/><span className="text-brand-500">Your digital CV for every project.</span></span>}
-                        {activeTab === 'supplier' && <span>Direct Market Access.<br/><span className="text-brand-500">Sell bulk materials without middlemen.</span></span>}
-                        {activeTab === 'public' && <span>Verify Progress Instantly.<br/><span className="text-brand-500">Trust, but verify with QR.</span></span>}
-                      </h3>
+            <div className="flex flex-col md:flex-row gap-16">
+              
+              {/* Left: Navigation */}
+              <div className="md:w-1/3 space-y-2">
+                <h2 className="font-serif text-3xl text-brand-900 mb-8">Orchestrating<br/>the Chaos.</h2>
+                
+                {(['govt', 'engineer', 'supplier', 'public'] as const).map((tab) => (
+                  <div 
+                    key={tab}
+                    onClick={() => setActiveTab(tab)}
+                    className={cn(
+                      "group cursor-pointer p-4 rounded-xl transition-all duration-300 border border-transparent",
+                      activeTab === tab ? "bg-brand-50 border-brand-100" : "hover:bg-brand-50/50"
+                    )}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className={cn("font-medium text-lg capitalize", activeTab === tab ? "text-brand-900" : "text-brand-400")}>
+                        {tab === 'govt' && "Government Body"}
+                        {tab === 'engineer' && "Site Engineer"}
+                        {tab === 'supplier' && "Material Supplier"}
+                        {tab === 'public' && "Public Citizen"}
+                      </span>
+                      {activeTab === tab && <ChevronRight size={16} className="text-brand-900"/>}
                     </div>
-                    
-                    <div className="space-y-4">
-                      {[1, 2, 3].map((i) => (
-                        <div key={i} className="flex gap-4 items-start group">
-                          <div className="w-10 h-10 rounded-full bg-brand-50 border border-brand-100 flex items-center justify-center shrink-0 group-hover:bg-brand-900 group-hover:text-white transition-colors">
-                            {i === 1 ? <Search size={18}/> : i === 2 ? <Activity size={18}/> : <ShieldCheck size={18}/>}
-                          </div>
-                          <div>
-                            <h4 className="font-semibold text-brand-900 text-sm">
-                              {activeTab === 'govt' && i === 1 && "AI-Analyzed Past Performance"}
-                              {activeTab === 'govt' && i === 2 && "Real-time Inspection Dashboard"}
-                              {activeTab === 'govt' && i === 3 && "Budget Overrun Alerts"}
-                              
-                              {activeTab === 'engineer' && i === 1 && "Verified Digital Portfolio"}
-                              {activeTab === 'engineer' && i === 2 && "Labor Attendance & Output"}
-                              {activeTab === 'engineer' && i === 3 && "Integrated Material Requests"}
+                    <AnimatePresence>
+                      {activeTab === tab && (
+                        <motion.p 
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: "auto", opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          className="text-sm text-brand-500 leading-relaxed overflow-hidden"
+                        >
+                          {tab === 'govt' && "Eliminate corruption with AI-analyzed tenders and real-time budget oversight."}
+                          {tab === 'engineer' && "Build a digital reputation. Manage labor, blueprints, and tasks in one app."}
+                          {tab === 'supplier' && "Access hyper-local demand. Sell bricks and cement directly to sites."}
+                          {tab === 'public' && "Scan QR codes to verify if public money is being spent correctly."}
+                        </motion.p>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                ))}
+              </div>
 
-                              {activeTab === 'supplier' && i === 1 && "Hyper-local Demand Forecasting"}
-                              {activeTab === 'supplier' && i === 2 && "Digital GST Invoicing"}
-                              {activeTab === 'supplier' && i === 3 && "Guaranteed Payment Escrow"}
+              {/* Right: Dynamic Visual */}
+              <div className="md:w-2/3 bg-brand-50 rounded-2xl border border-brand-100 p-8 relative overflow-hidden flex items-center justify-center min-h-[500px]">
+                <div className="absolute inset-0 opacity-[0.03] bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
+                
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={activeTab}
+                    initial={{ opacity: 0, scale: 0.95, filter: "blur(10px)" }}
+                    animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+                    exit={{ opacity: 0, scale: 1.05, filter: "blur(10px)" }}
+                    transition={{ duration: 0.5 }}
+                    className="w-full max-w-md"
+                  >
+                    {/* Abstract Card UI based on Tab */}
+                    <div className="bg-white rounded-xl shadow-2xl border border-brand-100 overflow-hidden">
+                      {/* Header */}
+                      <div className="h-32 bg-brand-900 relative p-6 flex items-end">
+                         <div className="absolute top-0 right-0 p-6 opacity-10 text-white">
+                            {activeTab === 'govt' && <Building2 size={100}/>}
+                            {activeTab === 'engineer' && <HardHat size={100}/>}
+                            {activeTab === 'supplier' && <Layers size={100}/>}
+                            {activeTab === 'public' && <QrCode size={100}/>}
+                         </div>
+                         <div className="text-white relative z-10">
+                            <div className="text-xs uppercase tracking-widest text-brand-300 mb-1">System View</div>
+                            <h3 className="text-2xl font-serif">
+                              {activeTab === 'govt' && "Tender Analyzer"}
+                              {activeTab === 'engineer' && "Engineer Profile"}
+                              {activeTab === 'supplier' && "Marketplace Feed"}
+                              {activeTab === 'public' && "Public Audit Scan"}
+                            </h3>
+                         </div>
+                      </div>
+                      
+                      {/* Body */}
+                      <div className="p-6 space-y-4">
+                         {activeTab === 'govt' && (
+                           <>
+                             <div className="flex justify-between items-center p-3 bg-green-50 border border-green-100 rounded-lg">
+                               <span className="text-sm font-medium text-green-800">Applicant Match Score</span>
+                               <span className="font-bold text-green-700 text-lg">98.5%</span>
+                             </div>
+                             <div className="space-y-2">
+                               <div className="h-2 w-full bg-brand-100 rounded-full"><div className="h-full w-3/4 bg-brand-400 rounded-full"></div></div>
+                               <div className="h-2 w-full bg-brand-100 rounded-full"><div className="h-full w-1/2 bg-brand-300 rounded-full"></div></div>
+                             </div>
+                           </>
+                         )}
+                         
+                         {activeTab === 'engineer' && (
+                           <div className="flex items-start gap-4">
+                              <div className="w-16 h-16 bg-brand-200 rounded-full overflow-hidden border-2 border-white shadow-md">
+                                 <img src="https://i.pravatar.cc/150?img=33" alt="Profile" className="w-full h-full object-cover" />
+                              </div>
+                              <div>
+                                 <div className="font-bold text-brand-900">Rajiv Mehta</div>
+                                 <div className="text-xs text-brand-500">Senior Civil Engineer</div>
+                                 <div className="flex gap-1 mt-2">
+                                    {[1,2,3,4,5].map(s => <div key={s} className="w-3 h-3 bg-yellow-400 rounded-full"></div>)}
+                                 </div>
+                              </div>
+                           </div>
+                         )}
 
-                              {activeTab === 'public' && i === 1 && "Scan Site QR Code"}
-                              {activeTab === 'public' && i === 2 && "View Approved Budget vs Actual"}
-                              {activeTab === 'public' && i === 3 && "Lodge Verified Complaints"}
-                            </h4>
-                            <p className="text-sm text-brand-500 mt-1 leading-relaxed">
-                              {/* Generic subtitle for demo, would be dynamic in real app */}
-                              Enabled by our secure, blockchain-backed ledger ensuring no data tampering is possible.
-                            </p>
-                          </div>
-                        </div>
-                      ))}
+                         {activeTab === 'supplier' && (
+                            <div className="space-y-3">
+                               <div className="flex justify-between items-center border-b border-brand-50 pb-2">
+                                  <div className="text-sm font-medium text-brand-900">5,000 Bricks</div>
+                                  <Button size="sm" variant="outline" className="h-8 text-xs">Bid</Button>
+                               </div>
+                               <div className="flex justify-between items-center border-b border-brand-50 pb-2">
+                                  <div className="text-sm font-medium text-brand-900">200 Bags Cement</div>
+                                  <Button size="sm" variant="outline" className="h-8 text-xs">Bid</Button>
+                               </div>
+                            </div>
+                         )}
+
+                         {activeTab === 'public' && (
+                            <div className="text-center py-4">
+                               <div className="inline-block p-4 bg-white border-2 border-dashed border-brand-200 rounded-lg mb-4">
+                                  <QrCode size={80} className="text-brand-900"/>
+                               </div>
+                               <p className="text-xs text-brand-400">Last verified: Today, 10:00 AM</p>
+                            </div>
+                         )}
+                      </div>
                     </div>
-                  </div>
-
-                  {/* Visual Content (Cards) */}
-                  <div className="bg-brand-50/50 rounded-2xl border border-brand-100 p-8 relative h-full flex items-center justify-center overflow-hidden">
-                    <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
-                    
-                    {/* Dynamic Card Mockups based on Tab */}
-                    {activeTab === 'engineer' && (
-                      <div className="bg-white p-6 rounded-xl shadow-xl w-full max-w-sm border border-brand-100 relative z-10">
-                         <div className="flex items-center gap-4 mb-6">
-                            <div className="w-12 h-12 bg-brand-200 rounded-full overflow-hidden">
-                              <img src="https://i.pravatar.cc/150?img=11" alt="Engineer" />
-                            </div>
-                            <div>
-                               <h4 className="font-bold text-brand-900">Rajesh Civil Works</h4>
-                               <div className="flex gap-1 text-yellow-500 text-xs">★★★★★ <span className="text-brand-400 ml-2">(42 Projects)</span></div>
-                            </div>
-                         </div>
-                         <div className="space-y-3">
-                            <div className="flex justify-between text-sm border-b border-brand-50 pb-2">
-                              <span className="text-brand-500">On-Time Rate</span>
-                              <span className="font-mono font-bold text-green-600">98.2%</span>
-                            </div>
-                            <div className="flex justify-between text-sm border-b border-brand-50 pb-2">
-                              <span className="text-brand-500">Material Efficiency</span>
-                              <span className="font-mono font-bold text-brand-900">A+</span>
-                            </div>
-                         </div>
-                         <Button className="w-full mt-6 bg-brand-900 text-white" size="sm">View Full CV</Button>
-                      </div>
-                    )}
-
-                    {activeTab === 'supplier' && (
-                      <div className="bg-white p-4 rounded-xl shadow-xl w-full max-w-sm border border-brand-100 relative z-10 space-y-3">
-                        <div className="flex items-center justify-between">
-                          <div className="text-xs font-bold text-brand-400 uppercase">New Demand Nearby</div>
-                          <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
-                        </div>
-                        <div className="p-3 bg-brand-50 rounded border border-brand-100 flex justify-between items-center">
-                           <div>
-                             <div className="font-bold text-brand-900">5,000 Red Bricks</div>
-                             <div className="text-xs text-brand-500">Site: Govt School, Block B</div>
-                           </div>
-                           <Button size="sm" variant="outline">Bid Now</Button>
-                        </div>
-                        <div className="p-3 bg-brand-50 rounded border border-brand-100 flex justify-between items-center">
-                           <div>
-                             <div className="font-bold text-brand-900">200 Bags Cement</div>
-                             <div className="text-xs text-brand-500">Site: Highway 42</div>
-                           </div>
-                           <Button size="sm" variant="outline">Bid Now</Button>
-                        </div>
-                      </div>
-                    )}
-
-                    {activeTab === 'public' && (
-                      <div className="relative z-10 text-center">
-                         <div className="bg-white p-6 rounded-2xl shadow-2xl inline-block mb-4 border border-brand-200">
-                            <QrCode size={140} className="text-brand-900"/>
-                         </div>
-                         <p className="text-sm font-medium text-brand-600">Scan to View Site Audit</p>
-                      </div>
-                    )}
-
-                    {activeTab === 'govt' && (
-                       <div className="bg-white p-6 rounded-xl shadow-xl w-full max-w-sm border border-brand-100 relative z-10">
-                          <div className="flex items-center gap-3 mb-4 border-b border-brand-100 pb-4">
-                             <Building2 className="text-brand-600" />
-                             <span className="font-bold text-brand-900">Tender Allocator AI</span>
-                          </div>
-                          <div className="space-y-2">
-                             <div className="flex items-center justify-between text-sm p-2 hover:bg-brand-50 rounded cursor-pointer">
-                                <span>Applicant A</span>
-                                <span className="text-red-500 font-bold text-xs">Risk: High</span>
-                             </div>
-                             <div className="flex items-center justify-between text-sm p-2 bg-green-50 border border-green-100 rounded cursor-pointer">
-                                <span>Applicant B</span>
-                                <span className="text-green-600 font-bold text-xs">Match: 98%</span>
-                             </div>
-                             <div className="flex items-center justify-between text-sm p-2 hover:bg-brand-50 rounded cursor-pointer">
-                                <span>Applicant C</span>
-                                <span className="text-yellow-500 font-bold text-xs">Risk: Med</span>
-                             </div>
-                          </div>
-                       </div>
-                    )}
-
-                  </div>
-                </motion.div>
-              </AnimatePresence>
+                  </motion.div>
+                </AnimatePresence>
+              </div>
             </div>
           </div>
         </section>
 
-        {/* --- Features Bento Grid (Rich Content) --- */}
-        <section id="features" className="py-32 px-6 max-w-7xl mx-auto">
-          <div className="text-center max-w-3xl mx-auto mb-20">
-            <h2 className="text-3xl md:text-4xl font-semibold text-brand-900 mb-4">The Modern Engineer's Toolkit</h2>
-            <p className="text-brand-500">Everything you need to manage complex projects, from Blueprint to Billing, in one premium dashboard.</p>
+        {/* --- Bento Grid Toolkit --- */}
+        <section id="toolkit" className="py-32 px-6 max-w-7xl mx-auto">
+          <div className="text-center mb-24">
+             <h2 className="font-serif text-4xl md:text-5xl text-brand-900 mb-6">The Engineer's Toolkit</h2>
+             <p className="text-brand-500 max-w-2xl mx-auto text-lg">Advanced tools to manage the chaos of construction, packaged in a premium interface.</p>
           </div>
 
-          <div className="grid md:grid-cols-4 gap-6 auto-rows-[minmax(180px,auto)]">
+          <div className="grid md:grid-cols-4 gap-6 grid-auto-rows-[200px]">
             
-            {/* Card 1: AI Voice (Large) */}
-            <Card className="md:col-span-2 md:row-span-2 bg-brand-900 text-white border-none overflow-hidden relative group">
-              <div className="absolute top-0 right-0 w-64 h-64 bg-brand-700 rounded-full blur-[80px] opacity-40 -translate-y-1/2 translate-x-1/2 group-hover:opacity-60 transition-opacity"></div>
-              <div className="p-8 h-full flex flex-col justify-between relative z-10">
-                <div>
-                  <div className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center mb-6 border border-white/10">
-                    <Mic className="text-brand-200" />
-                  </div>
-                  <h3 className="text-2xl font-semibold mb-2">Voice-to-Ledger AI</h3>
-                  <p className="text-brand-300 text-sm leading-relaxed max-w-sm">
-                    Don't type. Just speak. <br/>
-                    <span className="italic text-white opacity-80">"Added 50 bags of cement today."</span> <br/>
-                    Our AI parses your voice, updates inventory, and calculates costs automatically.
-                  </p>
-                </div>
-                {/* Audio Wave Visual */}
-                <div className="flex items-end gap-1 h-12 opacity-80">
-                   {[20, 40, 60, 30, 70, 40, 80, 50, 30, 60, 40].map((h,i)=>(
-                      <motion.div 
-                        key={i} 
-                        animate={{ height: [10, h, 10] }} 
-                        transition={{ repeat: Infinity, duration: 1.5, delay: i * 0.1 }}
-                        className="w-1.5 bg-brand-400 rounded-full" 
-                      />
-                   ))}
-                </div>
+            {/* Large Card: AI Voice */}
+            <Card className="md:col-span-2 md:row-span-2 bg-brand-900 text-white border-none group">
+              <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-20 mix-blend-overlay"></div>
+              <div className="relative z-10 flex flex-col justify-between h-full">
+                 <div className="flex justify-between items-start">
+                    <div className="p-3 bg-white/10 rounded-xl backdrop-blur-md border border-white/10">
+                       <Mic className="text-brand-100" size={24}/>
+                    </div>
+                    <div className="px-3 py-1 rounded-full bg-brand-800 border border-brand-700 text-xs font-mono text-brand-200">AI ACTIVE</div>
+                 </div>
+                 
+                 <div className="space-y-4">
+                    <h3 className="text-3xl font-serif">Voice-to-Ledger</h3>
+                    <p className="text-brand-200 font-light leading-relaxed">
+                       "Recorded 50 bags of cement unloaded at Site B." <br/>
+                       <span className="text-sm opacity-60">System automatically updates inventory and expense logs.</span>
+                    </p>
+                    {/* Audio Visualizer */}
+                    <div className="flex gap-1 h-8 items-end">
+                       {[...Array(12)].map((_, i) => (
+                          <motion.div 
+                            key={i}
+                            animate={{ height: ["20%", "100%", "20%"] }}
+                            transition={{ duration: 1, repeat: Infinity, delay: i * 0.1, ease: "easeInOut" }}
+                            className="w-2 bg-brand-400 rounded-full opacity-80"
+                          />
+                       ))}
+                    </div>
+                 </div>
               </div>
             </Card>
 
-            {/* Card 2: Plan vs Actual */}
-            <Card className="md:col-span-1 bg-white p-6 hover:shadow-lg transition-shadow duration-300">
-               <div className="bg-brand-50 w-10 h-10 rounded-lg flex items-center justify-center mb-4 text-brand-800">
-                  <FileSpreadsheet size={20} />
-               </div>
-               <h3 className="text-lg font-semibold text-brand-900 mb-1">Plan vs. Actual</h3>
-               <p className="text-xs text-brand-500 mb-4">Track milestones vs reality.</p>
-               <div className="w-full bg-gray-100 h-1.5 rounded-full mb-2 overflow-hidden">
-                 <div className="bg-brand-300 h-full w-full"></div>
-               </div>
-               <div className="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden">
-                 <div className="bg-red-500 h-full w-[70%]"></div>
-               </div>
-               <div className="mt-2 text-[10px] text-red-500 font-medium">⚠ 3 Days Behind Schedule</div>
-            </Card>
-
-            {/* Card 3: Document Vault */}
-            <Card className="md:col-span-1 bg-white p-6 hover:shadow-lg transition-shadow duration-300 group">
-               <div className="bg-brand-50 w-10 h-10 rounded-lg flex items-center justify-center mb-4 text-brand-800">
+            {/* Small Card: Vault */}
+            <Card className="md:col-span-1 group hover:border-brand-400 transition-colors">
+               <div className="mb-4 p-2 bg-brand-50 w-fit rounded-lg text-brand-700 group-hover:bg-brand-900 group-hover:text-white transition-colors">
                   <Lock size={20} />
                </div>
-               <h3 className="text-lg font-semibold text-brand-900 mb-1">Secure Vault</h3>
-               <p className="text-xs text-brand-500 mb-4">Encrypted storage for Blueprints.</p>
-               <div className="space-y-2">
-                 <div className="flex items-center gap-2 text-xs p-2 bg-brand-50 rounded border border-brand-100 group-hover:border-brand-300 transition-colors">
-                    <FileDigit size={14} className="text-brand-600"/>
-                    <span>Site_Plan_v2.dwg</span>
-                 </div>
-                 <div className="flex items-center gap-2 text-xs p-2 bg-brand-50 rounded border border-brand-100 group-hover:border-brand-300 transition-colors">
-                    <FileDigit size={14} className="text-brand-600"/>
-                    <span>Budget.pdf</span>
-                 </div>
+               <h3 className="font-serif text-xl text-brand-900 mb-2">Secure Vault</h3>
+               <p className="text-xs text-brand-500">Blueprint version control & storage.</p>
+               
+               <div className="mt-6 relative">
+                  <div className="absolute top-0 left-0 w-full h-12 bg-white border border-brand-200 rounded-lg shadow-sm transform rotate-3 z-10"></div>
+                  <div className="absolute top-2 left-2 w-full h-12 bg-white border border-brand-200 rounded-lg shadow-sm z-20 flex items-center px-3 gap-2">
+                     <FileDigit size={16} className="text-brand-400"/>
+                     <span className="text-[10px] font-mono text-brand-900">Structure_v2.dwg</span>
+                  </div>
                </div>
             </Card>
 
-            {/* Card 4: Regional Rankings (Wide) */}
-            <Card className="md:col-span-2 bg-gradient-to-br from-brand-50 to-white p-6 flex items-center justify-between relative overflow-hidden">
-               <div className="relative z-10">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Trophy className="text-yellow-600" size={20} />
-                    <span className="text-xs font-bold uppercase text-brand-500 tracking-widest">Leaderboards</span>
+            {/* Small Card: Rankings */}
+            <Card className="md:col-span-1 bg-gradient-to-br from-brand-50 to-white">
+               <div className="mb-4 p-2 bg-yellow-100 w-fit rounded-lg text-yellow-700">
+                  <Trophy size={20} />
+               </div>
+               <h3 className="font-serif text-xl text-brand-900 mb-2">Rankings</h3>
+               <p className="text-xs text-brand-500">Gamified regional leaderboards.</p>
+               
+               <div className="mt-4 flex items-center gap-3">
+                  <span className="text-3xl font-bold text-brand-900">#1</span>
+                  <div className="text-xs">
+                     <div className="font-bold">Sharma Cons.</div>
+                     <div className="text-green-600">Top Rated</div>
                   </div>
-                  <h3 className="text-xl font-semibold text-brand-900 mb-2">Regional Rankings</h3>
-                  <p className="text-sm text-brand-600 max-w-xs">
-                    Gamify quality. Top-rated engineers get priority on Govt tenders.
+               </div>
+            </Card>
+
+            {/* Wide Card: Analytics */}
+            <Card className="md:col-span-2 flex items-center justify-between bg-white">
+               <div className="max-w-[50%]">
+                  <h3 className="font-serif text-2xl text-brand-900 mb-2">Plan vs Actual</h3>
+                  <p className="text-sm text-brand-500">
+                     Real-time deviation tracking. Know if you are over budget before it happens.
                   </p>
                </div>
-               <div className="relative z-10 bg-white p-3 rounded-lg shadow-md border border-brand-100 w-48">
-                  <div className="flex items-center gap-3 mb-2">
-                     <div className="font-bold text-2xl text-brand-900">#1</div>
-                     <div className="text-xs leading-tight">
-                       <div className="font-bold">Sharma Builders</div>
-                       <div className="text-green-600">Kathmandu Region</div>
-                     </div>
-                  </div>
-                  <div className="w-full bg-brand-100 h-1 rounded-full">
-                     <div className="w-[98%] bg-yellow-500 h-full rounded-full"></div>
+               <div className="w-32 h-32 relative">
+                  <svg viewBox="0 0 36 36" className="w-full h-full transform -rotate-90">
+                    <path className="text-brand-100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="3" />
+                    <motion.path 
+                      initial={{ pathLength: 0 }}
+                      whileInView={{ pathLength: 0.75 }}
+                      transition={{ duration: 2, ease: "easeOut" }}
+                      className="text-brand-900" 
+                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" 
+                      fill="none" 
+                      stroke="currentColor" 
+                      strokeWidth="3" 
+                      strokeDasharray="100, 100"
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex items-center justify-center flex-col">
+                     <span className="text-xs text-brand-400 uppercase">Budget</span>
+                     <span className="font-bold text-brand-900">75%</span>
                   </div>
                </div>
-               <div className="absolute right-0 top-0 w-32 h-full bg-gradient-to-l from-white to-transparent"></div>
             </Card>
 
-             {/* Card 5: KYC & Chat */}
-             <Card className="md:col-span-2 bg-white p-6 flex flex-col md:flex-row gap-6 items-center">
-                <div className="flex-1">
-                   <div className="flex items-center gap-2 mb-2">
-                      <ShieldCheck className="text-green-600" size={20} />
-                      <h3 className="text-xl font-semibold text-brand-900">KYC & Verification</h3>
-                   </div>
-                   <p className="text-sm text-brand-500">
-                      Every entity—Contractor, Laborer, Supplier—is verified via Govt ID before entering the ecosystem.
-                   </p>
-                </div>
-                <div className="flex gap-2">
-                   <div className="px-4 py-2 bg-green-50 text-green-700 text-xs font-bold rounded-full border border-green-100 flex items-center gap-1">
-                      <CheckCircle2 size={12} /> Verified Profile
-                   </div>
-                   <div className="px-4 py-2 bg-brand-50 text-brand-700 text-xs font-bold rounded-full border border-brand-100 flex items-center gap-1">
-                      <Users size={12} /> 45 Employees Linked
-                   </div>
-                </div>
-             </Card>
-
           </div>
         </section>
 
-        {/* --- CTA Section --- */}
-        <section className="py-32 bg-brand-900 text-white relative overflow-hidden">
-           <div className="absolute inset-0 opacity-20">
-              {/* Subtle pattern */}
-              <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
-           </div>
-           
-           <div className="max-w-4xl mx-auto px-6 text-center relative z-10">
-             <h2 className="text-4xl md:text-5xl font-semibold mb-8 tracking-tight">Start Building with Integrity.</h2>
-             <p className="text-brand-200 text-lg mb-12 max-w-2xl mx-auto leading-relaxed">
-               Whether you are a government body seeking accountability, or a contractor seeking recognition—join the network that rewards quality.
-             </p>
-             <div className="flex flex-col sm:flex-row justify-center gap-4">
-                <button className="h-14 px-8 rounded-md bg-white text-brand-900 font-bold hover:bg-brand-50 transition-all transform hover:-translate-y-1 shadow-xl">
-                   Register Organization
-                </button>
-                <button className="h-14 px-8 rounded-md border border-brand-600 text-white font-medium hover:bg-brand-800 transition-colors">
-                   Contact Sales
-                </button>
-             </div>
+        {/* --- Transparency / Dark Mode Section --- */}
+        <section id="audit" className="py-32 bg-brand-900 text-brand-50 relative overflow-hidden">
+           {/* Decorative Circle */}
+           <div className="absolute -top-40 -right-40 w-[600px] h-[600px] border border-brand-700 rounded-full opacity-30"></div>
+           <div className="absolute top-20 right-20 w-[400px] h-[400px] border border-brand-700 rounded-full opacity-30"></div>
+
+           <div className="max-w-7xl mx-auto px-6 grid md:grid-cols-2 gap-16 items-center relative z-10">
+              <div>
+                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-brand-700 text-brand-300 text-xs font-mono mb-6">
+                    <ShieldCheck size={12} />
+                    PUBLIC AUDIT PROTOCOL
+                 </div>
+                 <h2 className="font-serif text-5xl md:text-6xl mb-8 leading-tight">Trust is not given.<br/>It is verified.</h2>
+                 <p className="text-brand-300 text-lg mb-10 leading-relaxed max-w-md font-light">
+                    Every project generates a unique, immutable QR code. Citizens can scan to verify budget allocation, deadlines, and progress photos.
+                 </p>
+                 <Button variant="glass" className="h-14 px-8">Explore Public Records</Button>
+              </div>
+
+              <div className="relative group cursor-pointer">
+                 <div className="absolute inset-0 bg-brand-500 blur-3xl opacity-20 rounded-full group-hover:opacity-30 transition-opacity"></div>
+                 <div className="relative bg-white p-2 rounded-3xl rotate-3 transition-transform duration-500 group-hover:rotate-0 shadow-2xl">
+                    <div className="border-2 border-dashed border-brand-200 rounded-2xl p-12 flex flex-col items-center text-center bg-brand-50">
+                       <QrCode size={200} className="text-brand-900 mb-6" />
+                       <p className="font-mono text-xs text-brand-400 uppercase tracking-widest">Scan for Transparency</p>
+                       <h3 className="mt-4 font-bold text-2xl text-brand-900">Hwy-402 Extension</h3>
+                       <div className="mt-2 flex gap-2">
+                          <span className="px-2 py-1 bg-green-100 text-green-700 text-xs font-bold rounded">ON TIME</span>
+                          <span className="px-2 py-1 bg-brand-200 text-brand-800 text-xs font-bold rounded">AUDITED</span>
+                       </div>
+                    </div>
+                 </div>
+              </div>
            </div>
         </section>
+
+        {/* --- Footer --- */}
+        <footer className="bg-brand-50 pt-24 pb-12 border-t border-brand-100">
+           <div className="max-w-7xl mx-auto px-6">
+              <div className="grid md:grid-cols-12 gap-12 mb-16">
+                 <div className="md:col-span-4">
+                    <Logo />
+                    <p className="mt-6 text-brand-500 leading-relaxed font-light">
+                       Bridging the gap between blueprint and reality. The premium operating system for the modern construction industry.
+                    </p>
+                 </div>
+                 
+                 <div className="md:col-span-2">
+                    <h4 className="font-serif text-brand-900 mb-6">Platform</h4>
+                    <ul className="space-y-4 text-sm text-brand-600">
+                       <li><a href="#" className="hover:text-brand-900 transition-colors">Tenders</a></li>
+                       <li><a href="#" className="hover:text-brand-900 transition-colors">Marketplace</a></li>
+                       <li><a href="#" className="hover:text-brand-900 transition-colors">Verification</a></li>
+                    </ul>
+                 </div>
+
+                 <div className="md:col-span-2">
+                    <h4 className="font-serif text-brand-900 mb-6">Company</h4>
+                    <ul className="space-y-4 text-sm text-brand-600">
+                       <li><a href="#" className="hover:text-brand-900 transition-colors">About</a></li>
+                       <li><a href="#" className="hover:text-brand-900 transition-colors">Careers</a></li>
+                       <li><a href="#" className="hover:text-brand-900 transition-colors">Contact</a></li>
+                    </ul>
+                 </div>
+
+                 <div className="md:col-span-4">
+                    <h4 className="font-serif text-brand-900 mb-6">Newsletter</h4>
+                    <div className="flex gap-2">
+                       <input type="email" placeholder="Enter your email" className="flex-1 bg-white border border-brand-200 rounded-md px-4 text-sm outline-none focus:border-brand-900 transition-colors" />
+                       <Button className="w-12"><ArrowRight size={18}/></Button>
+                    </div>
+                 </div>
+              </div>
+              
+              <div className="border-t border-brand-200 pt-8 flex flex-col md:flex-row justify-between items-center text-xs text-brand-400 font-mono">
+                 <span>&copy; 2025 BRIXA INC. ALL RIGHTS RESERVED.</span>
+                 <div className="flex gap-6 mt-4 md:mt-0">
+                    <a href="#">PRIVACY</a>
+                    <a href="#">TERMS</a>
+                    <a href="#">SITEMAP</a>
+                 </div>
+              </div>
+           </div>
+        </footer>
 
       </main>
-
-      {/* --- Footer --- */}
-      <footer className="bg-brand-50 py-16 px-6 border-t border-brand-200">
-        <div className="max-w-7xl mx-auto grid md:grid-cols-4 gap-12 text-sm">
-          <div className="col-span-1">
-             <Logo />
-             <p className="mt-6 text-brand-500 leading-relaxed">
-               The premium operating system for modern construction, bridging the gap between blueprint and reality.
-             </p>
-             <div className="mt-6 flex gap-4 text-brand-400">
-                <div className="w-8 h-8 bg-brand-100 rounded-full flex items-center justify-center hover:bg-brand-200 cursor-pointer transition-colors"><span className="sr-only">Twitter</span>X</div>
-                <div className="w-8 h-8 bg-brand-100 rounded-full flex items-center justify-center hover:bg-brand-200 cursor-pointer transition-colors"><span className="sr-only">LinkedIn</span>in</div>
-             </div>
-          </div>
-          
-          <div>
-            <h4 className="font-bold text-brand-900 mb-6 uppercase tracking-wider text-xs">Platform</h4>
-            <ul className="space-y-3 text-brand-600">
-              <li><a href="#" className="hover:text-brand-900 transition-colors">Tender Management</a></li>
-              <li><a href="#" className="hover:text-brand-900 transition-colors">Supplier Marketplace</a></li>
-              <li><a href="#" className="hover:text-brand-900 transition-colors">Project Tracking</a></li>
-              <li><a href="#" className="hover:text-brand-900 transition-colors">Public Audit</a></li>
-            </ul>
-          </div>
-
-          <div>
-            <h4 className="font-bold text-brand-900 mb-6 uppercase tracking-wider text-xs">Resources</h4>
-            <ul className="space-y-3 text-brand-600">
-              <li><a href="#" className="hover:text-brand-900 transition-colors">Success Stories</a></li>
-              <li><a href="#" className="hover:text-brand-900 transition-colors">Government Protocols</a></li>
-              <li><a href="#" className="hover:text-brand-900 transition-colors">Help Center</a></li>
-              <li><a href="#" className="hover:text-brand-900 transition-colors">API Documentation</a></li>
-            </ul>
-          </div>
-
-          <div>
-             <h4 className="font-bold text-brand-900 mb-6 uppercase tracking-wider text-xs">Newsletter</h4>
-             <p className="text-brand-500 mb-4">Get the latest construction tech updates.</p>
-             <div className="flex gap-2">
-               <input type="email" placeholder="Email address" className="bg-white border border-brand-200 rounded-md px-3 py-2 w-full focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all" />
-               <Button size="sm" className="bg-brand-900 text-white"><ArrowRight size={16}/></Button>
-             </div>
-          </div>
-        </div>
-        <div className="max-w-7xl mx-auto mt-16 pt-8 border-t border-brand-200 flex flex-col md:flex-row justify-between text-brand-400 text-xs items-center gap-4">
-          <span>© 2025 BRIXA Inc. All rights reserved.</span>
-          <div className="flex gap-6">
-            <a href="#" className="hover:text-brand-900">Privacy Policy</a>
-            <a href="#" className="hover:text-brand-900">Terms of Service</a>
-            <a href="#" className="hover:text-brand-900">Cookie Settings</a>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }
