@@ -1,27 +1,10 @@
-import { type JSX } from 'react';
+"use client";
 
-export function Card({
-  className,
-  title,
-  children,
-  href,
-}: {
-  className?: string;
-  title: string;
-  children: React.ReactNode;
-  href: string;
-}): JSX.Element {
-  return (
-    <a
-      className={className}
-      href={`${href}?utm_source=create-turbo&utm_medium=basic&utm_campaign=create-turbo"`}
-      rel="noopener noreferrer"
-      target="_blank"
-    >
-      <h2>
-        {title} <span>-&gt;</span>
-      </h2>
-      <p>{children}</p>
-    </a>
-  );
-}
+import * as React from "react";
+import { motion } from "framer-motion";
+
+export const Card = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => (
+  <div className={`bg-white border border-brand-100 p-8 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] ${className}`}>
+    {children}
+  </div>
+);
