@@ -1,5 +1,5 @@
 {
-  "extends": "@repo/typescript-config/base.json",
+  "extends": "@BRIXA/typescript-config/base.json",
   "compilerOptions": {
     "declaration": true,
     "declarationMap": true,
@@ -11,6 +11,13 @@
     "outDir": "dist",
     "baseUrl": "src"
   },
-  "include": ["src"],
-  "exclude": ["node_modules", "test", "dist", "**/*spec.ts"]
+  "include": [
+    "src"
+  ],
+  "exclude": [
+    "node_modules",
+    "test",
+    "dist",
+    "**/*spec.ts"
+  ]
 }

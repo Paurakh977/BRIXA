@@ -9,7 +9,7 @@ import {
   Lock, FileDigit, MapPin, CheckCircle2, TrendingUp,
   Menu, X, ChevronRight
 } from "lucide-react";
-import { cn } from "@repo/utils"; 
+import { cn } from "@BRIXA/utils"; 
 
 // --- UI Components (Embedded for single-file portability) ---
 

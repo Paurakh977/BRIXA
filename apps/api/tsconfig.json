@@ -1,5 +1,5 @@
 {
-  "extends": "@repo/typescript-config/nestjs.json",
+  "extends": "@BRIXA/typescript-config/nestjs.json",
   "compilerOptions": {
     "baseUrl": "./",
     "outDir": "./dist"

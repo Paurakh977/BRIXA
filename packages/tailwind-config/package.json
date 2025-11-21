@@ -1,11 +1,15 @@
 {
-  "name": "@repo/tailwind-config",
+  "name": "@BRIXA/tailwind-config",
   "version": "0.0.0",
   "private": true,
   "type": "module",
   "exports": {
     "./tailwind.config.js": "./tailwind.config.js",
     "./postcss.config.mjs": "./postcss.config.mjs"
+  },
+  "devDependencies": {
+    "@BRIXA/eslint-config": "workspace:*",
+    "@BRIXA/typescript-config": "workspace:*"
   },
   "files": [
     "tailwind.config.js",

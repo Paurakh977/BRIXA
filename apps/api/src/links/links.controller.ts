@@ -8,7 +8,7 @@ import {
   Delete,
 } from '@nestjs/common';
 
-import type { CreateLinkDto, UpdateLinkDto } from '@repo/api';
+import type { CreateLinkDto, UpdateLinkDto } from '@BRIXA/api';
 
 import { LinksService } from './links.service';
 

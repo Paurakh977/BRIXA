@@ -1,5 +1,5 @@
 import * as React from "react";
-import { cn } from "@repo/utils" 
+import { cn } from "@BRIXA/utils"
 
 const Card = React.forwardRef<
   HTMLDivElement,

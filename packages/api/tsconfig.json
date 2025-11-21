@@ -1,13 +1,22 @@
 {
-  "extends": "@repo/typescript-config/nestjs.json",
+  "extends": "@BRIXA/typescript-config/nestjs.json",
   "compilerOptions": {
     "allowJs": true,
     "baseUrl": "src",
     "esModuleInterop": true,
     "incremental": false,
     "outDir": "dist",
-    "types": ["node"]
+    "types": [
+      "node"
+    ]
   },
-  "include": ["src"],
-  "exclude": ["node_modules", "test", "dist", "**/*spec.ts"]
+  "include": [
+    "src"
+  ],
+  "exclude": [
+    "node_modules",
+    "test",
+    "dist",
+    "**/*spec.ts"
+  ]
 }

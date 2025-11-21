@@ -1,5 +1,5 @@
 {
-    "name": "@repo/utils",
+    "name": "@BRIXA/utils",
     "version": "0.0.0",
     "private": true,
     "exports": {
@@ -21,8 +21,8 @@
         "tailwind-merge": "^3.4.0"
     },
     "devDependencies": {
-        "@repo/eslint-config": "workspace:*",
-        "@repo/typescript-config": "workspace:*",
+        "@BRIXA/eslint-config": "workspace:*",
+        "@BRIXA/typescript-config": "workspace:*",
         "@types/node": "^22.15.3",
         "eslint": "^9.31.0",
         "typescript": "5.8.2"

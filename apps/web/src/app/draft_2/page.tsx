@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
-import { Button } from "@repo/ui/second_button"; // Adjust path
-import { Card } from "@repo/ui/second_card";     // Adjust path
+import { Button } from "@BRIXA/ui/second_button"; // Adjust path
+import { Card } from "@BRIXA/ui/second_card";     // Adjust path
 import { 
   Building2, ShieldCheck, FileSpreadsheet, HardHat, 
   Layers, Smartphone, Search, Activity, FileCheck, 

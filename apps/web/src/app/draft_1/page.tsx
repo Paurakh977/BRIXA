@@ -2,8 +2,8 @@
 
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Button } from "@repo/ui/first_button"; 
-import { Card } from "@repo/ui/first_card";
+import { Button } from "@BRIXA/ui/first_button"; 
+import { Card } from "@BRIXA/ui/first_card";
 import { 
   Building2, ShieldCheck, FileSpreadsheet, HardHat, 
   Layers, Smartphone, Search, Activity, FileCheck, 

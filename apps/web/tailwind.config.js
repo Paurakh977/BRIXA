@@ -1,4 +1,4 @@
-import sharedConfig from "@repo/tailwind-config/tailwind.config.js";
+import sharedConfig from "@BRIXA/tailwind-config/tailwind.config.js";
 
 export default {
   ...sharedConfig,
