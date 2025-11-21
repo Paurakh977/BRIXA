@@ -9,14 +9,7 @@ import {
   Lock, FileDigit, MapPin, CheckCircle2, TrendingUp,
   Menu, X, ChevronRight
 } from "lucide-react";
-// import { cn } from "@/lib/utils"; 
-
-import { type ClassValue, clsx } from "clsx";
-import { twMerge } from "tailwind-merge";
-
-function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
+import { cn } from "@repo/utils"; 
 
 // --- UI Components (Embedded for single-file portability) ---
 
