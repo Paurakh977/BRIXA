@@ -1,0 +1,39 @@
+version: "3.9"
+
+services:
+  brixa-db:
+    image: postgres:16
+    container_name: brixa-db
+    restart: always
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: brixa
+    ports:
+      - "5432:5432"
+    volumes:
+      - brixa-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin"]
+      interval: 5s
+      retries: 5
+      start_period: 5s
+
+  brixa-pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: brixa-pgadmin
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      brixa-db:
+        condition: service_healthy
+    volumes:
+      - brixa-pgadmin-data:/var/lib/pgadmin
+
+volumes:
+  brixa-db-data:
+  brixa-pgadmin-data:
