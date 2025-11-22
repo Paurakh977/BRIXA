@@ -1,0 +1,48 @@
+{
+  "name": "@BRIXA/database",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "prisma": "prisma",
+    "build": "tsc -p tsconfig.json",
+    "db:push": "prisma db push",
+    "db:pull": "prisma db pull",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
+    "db:reset": "prisma migrate reset",
+    "db:seed": "pnpm run seed:run",
+    "seed:run": "ts-node prisma/seed.ts"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.15.6",
+    "prisma": "^7.0.0",
+    "ts-node": "^10.9.2"
+  },
+  "dependencies": {
+    "@prisma/adapter-pg": "^7.0.0",
+    "@prisma/client": "^7.0.0",
+    "dotenv": "^17.2.3",
+    "pg": "^8.16.3"
+  },
+  "prisma": {
+    "seed": "node --loader ts-node/esm prisma/seed.ts"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "./dist/**",
+    "./generated/**",
+    "./prisma/**"
+  ],
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    },
+    "./*": {
+      "import": "./dist/*.js",
+      "require": "./dist/*.js"
+    }
+  }
+}
