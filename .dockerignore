@@ -1,0 +1,47 @@
+# Node.js / JavaScript / TypeScript
+node_modules
+npm-debug.log
+yarn-error.log
+pnpm-debug.log
+dist
+.next
+out
+coverage
+*.tsbuildinfo
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.env
+.env.*
+venv/
+env/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+__pycache__/
+*.egg-info/
+*.egg
+.eggs/
+
+# NestJS
+dist/
+tsconfig.tsbuildinfo
+
+# Logs
+*.log
+*.log.*
+*.tmp
+*.swp
+
+# Git / IDE / OS
+.git
+.gitignore
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+
