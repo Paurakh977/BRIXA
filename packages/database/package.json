@@ -2,9 +2,16 @@
   "name": "@BRIXA/database",
   "version": "0.0.0",
   "private": true,
+  "main": "./dist/src/index.js",
+  "types": "./src/index.ts",
+  "files": [
+    "dist",
+    "prisma/schema.prisma"
+  ],
   "scripts": {
+    "build": "prisma generate && tsc",
+    "dev": "prisma generate --watch",
     "prisma": "prisma",
-    "build": "tsc -p tsconfig.json",
     "db:push": "prisma db push",
     "db:pull": "prisma db pull",
     "db:generate": "prisma generate",
@@ -12,12 +19,16 @@
     "db:deploy": "prisma migrate deploy",
     "db:reset": "prisma migrate reset",
     "db:seed": "pnpm run seed:run",
-    "seed:run": "ts-node prisma/seed.ts"
+    "seed:run": "tsx prisma/seed.ts"
   },
   "devDependencies": {
+    "@BRIXA/typescript-config": "workspace:*",
+    "@types/node": "^20.11.0",
     "@types/pg": "^8.15.6",
     "prisma": "^7.0.0",
-    "ts-node": "^10.9.2"
+    "ts-node": "^10.9.2",
+    "tsx": "^4.20.6",
+    "typescript": "^5.3.3"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.0.0",
@@ -26,23 +37,12 @@
     "pg": "^8.16.3"
   },
   "prisma": {
-    "seed": "node --loader ts-node/esm prisma/seed.ts"
+    "seed": "pnpm run seed:run"
   },
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "files": [
-    "./dist/**",
-    "./generated/**",
-    "./prisma/**"
-  ],
   "exports": {
     ".": {
-      "import": "./dist/index.js",
-      "require": "./dist/index.js"
-    },
-    "./*": {
-      "import": "./dist/*.js",
-      "require": "./dist/*.js"
+      "types": "./src/index.ts",
+      "default": "./dist/src/index.js"
     }
   }
 }
