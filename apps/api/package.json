@@ -15,22 +15,23 @@
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\""
   },
   "dependencies": {
+    "@BRIXA/api": "workspace:*",
+    "@BRIXA/database": "workspace:*",
     "@nestjs/common": "^11.0.0",
     "@nestjs/core": "^11.0.0",
+    "@nestjs/mapped-types": "*",
     "@nestjs/platform-express": "^11.0.0",
-    "@BRIXA/database": "workspace:*",
-    "@BRIXA/api": "workspace:*",
     "reflect-metadata": "^0.2.0",
     "rxjs": "^7.8.1"
   },
   "devDependencies": {
+    "@BRIXA/eslint-config": "workspace:*",
+    "@BRIXA/jest-config": "workspace:*",
+    "@BRIXA/typescript-config": "workspace:*",
     "@jest/globals": "^29.7.0",
     "@nestjs/cli": "^11.0.0",
     "@nestjs/schematics": "^11.0.0",
     "@nestjs/testing": "^11.0.0",
-    "@BRIXA/eslint-config": "workspace:*",
-    "@BRIXA/jest-config": "workspace:*",
-    "@BRIXA/typescript-config": "workspace:*",
     "@types/express": "^4.17.17",
     "@types/node": "^22.10.7",
     "@types/supertest": "^6.0.0",
@@ -41,6 +42,7 @@
     "ts-loader": "^9.4.3",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
-    "typescript": "5.5.4"
+    "typescript": "5.5.4",
+    "webpack-node-externals": "^3.0.0"
   }
 }
