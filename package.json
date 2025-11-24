@@ -19,7 +19,7 @@
     "db:pull": "turbo run db:pull",
     "db:deploy": "turbo run db:deploy",
     "db:reset": "pnpm --filter database db:reset",
-    "db:seed": "pnpm --filter database db:seed"
+    "db:seed": "turbo run db:seed"
   },
   "devDependencies": {
     "@BRIXA/eslint-config": "workspace:*",

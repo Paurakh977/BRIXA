@@ -16,11 +16,12 @@
       "dependsOn": ["^build"],
       "cache": false
     },
-      "db:generate": {
+    "db:generate": {
       "cache": false
     },
     "db:migrate": {
-      "cache": false
+      "cache": false,
+      "persistent": true
     },
     "db:deploy": {
       "cache": false
