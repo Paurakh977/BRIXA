@@ -1,26 +1,32 @@
 import { Injectable } from '@nestjs/common';
-import { prisma } from '@BRIXA/database';
-import type { Prisma } from '@BRIXA/database';
+import { DatabaseService } from '../database/database.service';
+import { CreateUserDto } from '@BRIXA/api'; // Import from shared package
+import { Prisma } from '@BRIXA/database';
 
 @Injectable()
 export class UsersService {
-  create(data: Prisma.UserCreateInput) {
-    return prisma.user.create({ data });
+  constructor(private readonly db: DatabaseService) {}
+
+  async create(data: CreateUserDto) {
+    return this.db.client.user.create({ data });
   }
 
-  findAll() {
-    return prisma.user.findMany({ include: { posts: true } });
+  async findAll() {
+    return this.db.client.user.findMany({
+      include: { posts: true }, // Include posts so we can count them in UI
+      orderBy: { id: 'desc' },
+    });
   }
 
-  findOne(id: number) {
-    return prisma.user.findUnique({ where: { id }, include: { posts: true } });
+  async findOne(id: number) {
+    return this.db.client.user.findUnique({ where: { id } });
   }
 
-  update(id: number, data: Prisma.UserUpdateInput) {
-    return prisma.user.update({ where: { id }, data });
+  async update(id: number, data: Prisma.UserUpdateInput) {
+    return this.db.client.user.update({ where: { id }, data });
   }
 
-  remove(id: number) {
-    return prisma.user.delete({ where: { id } });
+  async remove(id: number) {
+    return this.db.client.user.delete({ where: { id } });
   }
 }

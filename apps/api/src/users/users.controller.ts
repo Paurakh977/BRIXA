@@ -1,14 +1,15 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
-import type { CreateUserDto, UpdateUserDto } from '@BRIXA/api';
 import { UsersService } from './users.service';
+import { CreateUserDto } from '@BRIXA/api'; // Shared DTO
+import { Prisma } from '@BRIXA/database';
 
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Post()
-  create(@Body() body: CreateUserDto) {
-    return this.usersService.create(body);
+  create(@Body() createUserDto: CreateUserDto) {
+    return this.usersService.create(createUserDto);
   }
 
   @Get()
@@ -22,8 +23,8 @@ export class UsersController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() body: UpdateUserDto) {
-    return this.usersService.update(+id, body);
+  update(@Param('id') id: string, @Body() updateUserDto: Prisma.UserUpdateInput) {
+    return this.usersService.update(+id, updateUserDto);
   }
 
   @Delete(':id')

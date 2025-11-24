@@ -1,14 +1,15 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
-import type { CreatePostDto, UpdatePostDto } from '@BRIXA/api';
 import { PostsService } from './posts.service';
+import { CreatePostDto } from '@BRIXA/api'; // Shared DTO
+import { Prisma } from '@BRIXA/database';
 
 @Controller('posts')
 export class PostsController {
   constructor(private readonly postsService: PostsService) {}
 
   @Post()
-  create(@Body() body: CreatePostDto) {
-    return this.postsService.create(body);
+  create(@Body() createPostDto: CreatePostDto) {
+    return this.postsService.create(createPostDto);
   }
 
   @Get()
@@ -22,8 +23,8 @@ export class PostsController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() body: UpdatePostDto) {
-    return this.postsService.update(+id, body);
+  update(@Param('id') id: string, @Body() updatePostDto: Prisma.PostUpdateInput) {
+    return this.postsService.update(+id, updatePostDto);
   }
 
   @Delete(':id')
