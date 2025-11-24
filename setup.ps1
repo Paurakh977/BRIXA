@@ -4,6 +4,9 @@
 # Run this in PowerShell (as normal user)
 # ===============================
 
+# NOTE Clear all cache dirs for fresh start
+# Get-ChildItem -Path . -Include node_modules,.turbo,dist -Recurse -Directory -Force | Remove-Item -Recurse -Force
+
 Write-Host "Starting BRIXA Setup..." -ForegroundColor Cyan
 
 # Function to check if a command exists
