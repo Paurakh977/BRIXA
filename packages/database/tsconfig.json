@@ -1,0 +1,30 @@
+{
+  "extends": "@BRIXA/typescript-config/base.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "baseUrl": ".",
+    "outDir": "dist",
+    "noEmit": false,
+    "declaration": false,
+    "declarationMap": false,
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "paths": {
+      "@generated/*": [
+        "generated/prisma/*"
+      ]
+    },
+    "esModuleInterop": true,
+    "skipLibCheck": true
+  },
+  "include": [
+    "src",
+    "generated/prisma/client.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "prisma"
+  ]
+}
+

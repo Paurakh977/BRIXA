@@ -2,6 +2,11 @@
   "extends": "@BRIXA/typescript-config/nestjs.json",
   "compilerOptions": {
     "baseUrl": "./",
-    "outDir": "./dist"
+    "outDir": "./dist",
+    // "module": "NodeNext",
+    // "moduleResolution": "NodeNext", 
+    "declaration": false,
+    "declarationMap": false,
+    "paths": {}
   }
 }
