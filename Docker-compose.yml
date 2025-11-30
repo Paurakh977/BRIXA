@@ -14,7 +14,7 @@ services:
     volumes:
       - brixa-db-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U admin"]
+      test: ["CMD-SHELL", "pg_isready -U admin -d brixa"] # or use $POSTGRES_DB
       interval: 5s
       retries: 5
       start_period: 5s
@@ -33,6 +33,54 @@ services:
         condition: service_healthy
     volumes:
       - brixa-pgadmin-data:/var/lib/pgadmin
+
+  migrator:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile.prod
+      target: migrator
+      args:
+        DATABASE_URL: postgresql://admin:admin@brixa-db:5432/brixa?schema=public
+    environment:
+      DATABASE_URL: postgresql://admin:admin@brixa-db:5432/brixa?schema=public
+    command: npx prisma migrate deploy --schema=packages/database/prisma/schema.prisma --config=packages/database/prisma.config.ts
+    depends_on:
+      brixa-db:
+        condition: service_healthy
+
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile.prod
+      args:
+        DATABASE_URL: postgresql://admin:admin@brixa-db:5432/brixa?schema=public
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgresql://admin:admin@brixa-db:5432/brixa?schema=public
+    depends_on:
+      brixa-db:
+        condition: service_healthy
+      migrator:
+        condition: service_completed_successfully
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile.prod
+      target: runner
+      args:
+        DATABASE_URL: postgresql://admin:admin@brixa-db:5432/brixa?schema=public
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://admin:admin@brixa-db:5432/brixa?schema=public
+    depends_on:
+      brixa-db:
+        condition: service_healthy
+      migrator:
+        condition: service_completed_successfully
 
 volumes:
   brixa-db-data:
