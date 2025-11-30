@@ -1,5 +1,6 @@
 # Node.js / JavaScript / TypeScript
 node_modules
+**/node_modules
 npm-debug.log
 yarn-error.log
 pnpm-debug.log
@@ -38,7 +39,6 @@ tsconfig.tsbuildinfo
 
 # Git / IDE / OS
 .git
-.gitignore
 .idea/
 .vscode/
 .DS_Store
