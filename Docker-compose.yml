@@ -34,19 +34,7 @@ services:
     volumes:
       - brixa-pgadmin-data:/var/lib/pgadmin
 
-  migrator:
-    build:
-      context: .
-      dockerfile: apps/api/Dockerfile.prod
-      target: migrator
-      args:
-        DATABASE_URL: postgresql://admin:admin@brixa-db:5432/brixa?schema=public
-    environment:
-      DATABASE_URL: postgresql://admin:admin@brixa-db:5432/brixa?schema=public
-    command: npx prisma migrate deploy --schema=packages/database/prisma/schema.prisma --config=packages/database/prisma.config.ts
-    depends_on:
-      brixa-db:
-        condition: service_healthy
+
 
 
   web:
@@ -62,8 +50,7 @@ services:
     depends_on:
       brixa-db:
         condition: service_healthy
-      migrator:
-        condition: service_completed_successfully
+
 
   api:
     build:
@@ -79,8 +66,7 @@ services:
     depends_on:
       brixa-db:
         condition: service_healthy
-      migrator:
-        condition: service_completed_successfully
+
 
 volumes:
   brixa-db-data:
