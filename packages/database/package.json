@@ -25,10 +25,10 @@
     "@BRIXA/typescript-config": "workspace:*",
     "@types/node": "^20.11.0",
     "@types/pg": "^8.15.6",
-    "prisma": "^7.0.0",
     "ts-node": "^10.9.2",
     "tsx": "^4.20.6",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "prisma": "^7.0.0"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.0.0",
