@@ -28,6 +28,14 @@ ENV DATABASE_URL=$DATABASE_URL
 
 RUN pnpm turbo run build --filter=api...
 
+# --- 3. PRUNER ---
+FROM base AS pruner
+WORKDIR /app
+RUN npm install -g pnpm@8.15.5
+COPY --from=installer /app/ .
+RUN pnpm prune --prod
+
+# --- 4. RUNNER (API) ---
 FROM base AS runner
 WORKDIR /app
 
@@ -39,43 +47,33 @@ RUN apk add --no-cache openssl
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nestjs
 
-# --- 1. COPY FILES ---
-
 # Copy package.json
-COPY --from=installer /app/apps/api/package.json .
+COPY --from=pruner /app/apps/api/package.json .
 
 # Copy the built application
-COPY --from=installer /app/apps/api/dist ./dist
+COPY --from=pruner /app/apps/api/dist ./dist
 
-# Copy node_modules (with ownership set to nestjs)
-COPY --from=installer --chown=nestjs:nodejs /app/node_modules ./node_modules
+# Copy node_modules (pruned)
+COPY --from=pruner --chown=nestjs:nodejs /app/node_modules ./node_modules
 
-# Copy Workspace Packages (The Local Libraries)
-# 1. Database Package
-COPY --from=installer --chown=nestjs:nodejs /app/packages/database ./packages/database
-# 2. API Shared Package (Fixes: Cannot find module '@BRIXA/api')
-COPY --from=installer --chown=nestjs:nodejs /app/packages/api ./packages/api
+# Copy Workspace Packages
+COPY --from=pruner --chown=nestjs:nodejs /app/packages/database ./packages/database
+COPY --from=pruner --chown=nestjs:nodejs /app/packages/api ./packages/api
 
-
-# --- 2. FIX SYMLINKS ---
-# We switch to root temporarily to fix the links broken by the COPY command
+# Fix Symlinks
 USER root
-
-# Create the scope folder
 RUN mkdir -p /app/node_modules/@BRIXA
-
-# Fix Link: @BRIXA/database
 RUN rm -rf /app/node_modules/@BRIXA/database
 RUN ln -s /app/packages/database /app/node_modules/@BRIXA/database
-
-# Fix Link: @BRIXA/api
 RUN rm -rf /app/node_modules/@BRIXA/api
 RUN ln -s /app/packages/api /app/node_modules/@BRIXA/api
-
-# Ensure permissions are correct
 RUN chown -R nestjs:nodejs /app/node_modules/@BRIXA
 
-# --- 3. RUN ---
 USER nestjs
-
 CMD node dist/main
+
+# --- 5. MIGRATOR ---
+FROM base AS migrator
+WORKDIR /app
+COPY --from=installer /app/ .
+# No prune here, so we have prisma CLI

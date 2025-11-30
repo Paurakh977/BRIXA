@@ -1,0 +1,11 @@
+FROM node:22-alpine
+
+WORKDIR /app
+RUN apk add --no-cache libc6-compat python3 make g++
+RUN npm install -g pnpm@8.15.5 turbo
+
+COPY . .
+RUN pnpm install
+
+EXPOSE 3001
+CMD ["pnpm", "turbo", "run", "dev", "--filter=api"]

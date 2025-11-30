@@ -6,11 +6,11 @@ async function bootstrap() {
   
   // Enable CORS for your Next.js frontend
   app.enableCors({
-    origin: 'http://localhost:3001', // Adjust this to your frontend URL
+    origin: 'http://localhost:3000', // Adjust this to your frontend URL
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
   });
 
-  await app.listen(3000);
+  await app.listen(8000);
 }
 bootstrap();
