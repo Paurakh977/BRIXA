@@ -6,7 +6,8 @@
   "types": "./src/index.ts",
   "files": [
     "dist",
-    "prisma/schema.prisma"
+    "prisma",
+    "prisma.config.ts"
   ],
   "scripts": {
     "build": "prisma generate && tsc",

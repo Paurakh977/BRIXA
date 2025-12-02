@@ -22,7 +22,8 @@
     "@nestjs/mapped-types": "*",
     "@nestjs/platform-express": "^11.0.0",
     "reflect-metadata": "^0.2.0",
-    "rxjs": "^7.8.1"
+    "rxjs": "^7.8.1",
+    "prisma": "^7.0.0"
   },
   "devDependencies": {
     "@BRIXA/eslint-config": "workspace:*",
