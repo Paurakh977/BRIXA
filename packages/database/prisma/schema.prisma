@@ -7,20 +7,710 @@ datasource db {
   provider = "postgresql"
 }
 
-model User {
-  id    Int     @id @default(autoincrement())
-  email String  @unique
-  name  String?
-  posts Post[]
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
 }
 
-model Post {
-  id        Int     @id @default(autoincrement())
-  title     String
-  content   String?
-  published Boolean @default(false)
-  authorId  Int
-  author    User    @relation(fields: [authorId], references: [id])
+datasource db {
+  provider = "postgresql"
 }
+
+enum UserRole {
+  ADMIN
+  GOVT_OFFICIAL
+  CONTRACTOR
+  ARCHITECT
+  ENGINEER
+  AUDITOR
+  WORKER          // Laborer, Plumber, etc.
+  MANPOWER_AGENCY
+  SUPPLIER        // Hardware/Material
+  MACHINERY_OWNER
+  CLIENT          // Personal home builder
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  phoneNumber   String?   @unique
+  passwordHash  String
+  
+  firstName     String
+  lastName      String
+  avatarUrl     String?
+  bio           String?   @db.Text
+  
+  role          UserRole
+  isVerified    Boolean   @default(false) // Verified Badge status
+  isActive      Boolean   @default(true)
+  
+  // KYC & Documents
+  kycRecord     KYCRecord?
+  
+  // Specific Profiles (1:1 optional relations based on Role)
+  contractorProfile ContractorProfile?
+  workerProfile     WorkerProfile?
+  supplierProfile   SupplierProfile?
+  clientProfile     ClientProfile?
+  
+  // Social & Community
+  followedBy    Follows[] @relation("following")
+  following     Follows[] @relation("follower")
+  posts         Post[]
+  comments      Comment[]
+  achievements  UserAchievement[]
+  
+  // Professional Relations
+  sentReviews     Review[]  @relation("ReviewAuthor")
+  receivedReviews Review[]  @relation("ReviewTarget")
+  
+  // Project & Work
+  projectsOwned    Project[]       @relation("ProjectOwner")
+  projectMemberships ProjectMember[] // Being part of a team
+  
+  // Tendering
+  issuedTenders    Tender[]        @relation("TenderIssuer")
+  bids             Bid[]
+  contracts        Contract[]
+  
+  // Communication
+  sentMessages     Message[]
+  conversations    ConversationMember[]
+  
+  // Job Market
+  postedJobs       JobPosting[]
+  jobApplications  JobApplication[]
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@map("users")
+  @@index([email, phoneNumber])
+}
+
+model KYCRecord {
+  id              String    @id @default(uuid())
+  userId          String    @unique
+  user            User      @relation(fields: [userId], references: [id])
+  
+  documentType    String    // Passport, National ID, Tax Cert
+  documentNumber  String
+  documentUrl     String    // Secure URL to file
+  
+  status          KYCStatus @default(PENDING)
+  verifiedAt      DateTime?
+  rejectionReason String?
+
+  @@map("kyc_records")
+}
+
+enum KYCStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+// --------------------------------------------------------
+// 2. PROFESSIONAL PROFILES & GAMIFICATION
+// --------------------------------------------------------
+
+model ContractorProfile {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id])
+  
+  companyName     String?
+  licenseNumber   String?
+  specializations String[] // e.g., ["Residential", "High-rise"]
+  
+  // Stats for "Moneyball" analytics
+  projectsCompleted Int      @default(0)
+  totalBudgetManaged Decimal @default(0.0) @db.Decimal(15, 2)
+  onTimeRate         Float   @default(100.0) // Percentage
+  avgRating          Float   @default(0.0)
+
+  @@map("contractor_profiles")
+}
+
+model WorkerProfile {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id])
+  
+  trade           String   // Electrician, Carpenter
+  hourlyRate      Decimal  @db.Decimal(10, 2)
+  yearsExperience Int
+  skills          String[] // ["Wiring", "High Voltage"]
+  isAvailable     Boolean  @default(true)
+  
+  @@map("worker_profiles")
+}
+
+model SupplierProfile {
+  id          String   @id @default(uuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id])
+  shopName    String
+  categories  String[] // ["Cement", "Steel"]
+  
+  products    ProductListing[]
+  
+  @@map("supplier_profiles")
+}
+
+model ClientProfile {
+  id          String   @id @default(uuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id])
+  
+  // Privacy settings or preferences
+  preferences Json?
+  
+  @@map("client_profiles")
+}
+
+// GitHub-style Achievements
+model Achievement {
+  id          String   @id @default(uuid())
+  slug        String   @unique // e.g., "budget-master"
+  name        String
+  description String
+  iconUrl     String
+  
+  users       UserAchievement[]
+  
+  @@map("achievements")
+}
+
+model UserAchievement {
+  userId        String
+  achievementId String
+  user          User        @relation(fields: [userId], references: [id])
+  achievement   Achievement @relation(fields: [achievementId], references: [id])
+  awardedAt     DateTime    @default(now())
+
+  @@id([userId, achievementId])
+  @@map("user_achievements")
+}
+
+// --------------------------------------------------------
+// 3. TENDERING & CONTRACTS
+// --------------------------------------------------------
+
+enum TenderType {
+  GOVERNMENT
+  PRIVATE
+}
+
+enum TenderStatus {
+  DRAFT
+  OPEN
+  EVALUATING
+  AWARDED
+  CLOSED
+  CANCELLED
+}
+
+model Tender {
+  id          String       @id @default(uuid())
+  issuerId    String
+  issuer      User         @relation("TenderIssuer", fields: [issuerId], references: [id])
+  
+  title       String
+  description String       @db.Text
+  type        TenderType
+  status      TenderStatus @default(DRAFT)
+  
+  location    String
+  budgetMin   Decimal      @db.Decimal(15, 2)
+  budgetMax   Decimal      @db.Decimal(15, 2)
+  
+  deadline    DateTime
+  attachments String[]     // URLs to PDF requirements
+  
+  // Tech Specs stored as JSON to allow flexible criteria
+  criteria    Json?        
+  
+  bids        Bid[]
+  project     Project?     // Link to project once started
+
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@map("tenders")
+  @@index([status, type, location])
+}
+
+model Bid {
+  id          String   @id @default(uuid())
+  tenderId    String
+  tender      Tender   @relation(fields: [tenderId], references: [id])
+  
+  bidderId    String
+  bidder      User     @relation(fields: [bidderId], references: [id])
+  
+  amount      Decimal  @db.Decimal(15, 2)
+  proposal    String   @db.Text // Cover letter
+  documents   String[] // Proposal PDFs
+  
+  estimatedDays Int
+  
+  isWinner    Boolean  @default(false)
+  score       Float?   // Algorithmic score based on bidder stats
+
+  createdAt   DateTime @default(now())
+
+  @@map("bids")
+}
+
+model Contract {
+  id          String   @id @default(uuid())
+  title       String
+  content     String   @db.Text // Or link to PDF
+  
+  signatory1Id String
+  signatory1   User    @relation(fields: [signatory1Id], references: [id]) // Usually Contractor
+  
+  projectId   String?
+  project     Project? @relation(fields: [projectId], references: [id])
+  
+  status      String   // SIGNED, PENDING, TERMINATED
+  signedAt    DateTime?
+
+  @@map("contracts")
+}
+
+// --------------------------------------------------------
+// 4. PROJECT WORKSPACE (The Core)
+// --------------------------------------------------------
+
+model Project {
+  id          String   @id @default(uuid())
+  
+  // Public Transparency
+  qrCode      String   @unique // The string encoded in the QR
+  isPublic    Boolean  @default(false) // For Gov projects
+  
+  name        String
+  description String?
+  location    Json     // { lat, lng, address }
+  
+  ownerId     String
+  owner       User     @relation("ProjectOwner", fields: [ownerId], references: [id])
+  
+  tenderId    String?  @unique
+  tender      Tender?  @relation(fields: [tenderId], references: [id])
+  
+  startDate   DateTime?
+  endDate     DateTime?
+  
+  // Workspace Tools
+  phases      ProjectPhase[]
+  drawings    Drawing[]
+  budget      Budget?
+  dailyLogs   DailyLog[]
+  auditLogs   AuditLog[]
+  members     ProjectMember[]
+  contracts   Contract[]
+  
+  // Vault
+  documents   ProjectDocument[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("projects")
+  @@index([qrCode])
+}
+
+enum ProjectRole {
+  MANAGER
+  ARCHITECT
+  AUDITOR
+  SITE_SUPERVISOR
+  VIEWER
+}
+
+model ProjectMember {
+  id        String      @id @default(uuid())
+  projectId String
+  userId    String
+  role      ProjectRole
+  
+  project   Project     @relation(fields: [projectId], references: [id])
+  user      User        @relation(fields: [userId], references: [id])
+
+  @@unique([projectId, userId])
+  @@map("project_members")
+}
+
+// Timeline & Schedule
+model ProjectPhase {
+  id          String    @id @default(uuid())
+  projectId   String
+  project     Project   @relation(fields: [projectId], references: [id])
+  
+  name        String    // e.g., "Foundation", "Electrical"
+  startDate   DateTime
+  endDate     DateTime
+  
+  status      PhaseStatus @default(PLANNED)
+  
+  // Real-time comparison
+  actualStartDate DateTime?
+  actualEndDate   DateTime?
+  
+  tasks       Task[]
+
+  @@map("project_phases")
+}
+
+enum PhaseStatus {
+  PLANNED
+  IN_PROGRESS
+  DELAYED
+  COMPLETED
+}
+
+model Task {
+  id          String   @id @default(uuid())
+  phaseId     String
+  phase       ProjectPhase @relation(fields: [phaseId], references: [id])
+  
+  title       String
+  isCompleted Boolean  @default(false)
+  
+  @@map("tasks")
+}
+
+// --------------------------------------------------------
+// 5. WORKSPACE TOOLS (Architects, Contractors, Auditors)
+// --------------------------------------------------------
+
+// Architects: Version Control for Drawings
+model Drawing {
+  id          String   @id @default(uuid())
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id])
+  
+  title       String   // e.g., "Floor Plan Level 1"
+  category    String   // STRUCTURAL, ELECTRICAL, ARCHITECTURAL
+  
+  revisions   DrawingRevision[]
+  
+  @@map("drawings")
+}
+
+model DrawingRevision {
+  id          String   @id @default(uuid())
+  drawingId   String
+  drawing     Drawing  @relation(fields: [drawingId], references: [id])
+  
+  version     Int      // 1, 2, 3
+  fileUrl     String
+  uploadedBy  String
+  comments    String?
+  
+  createdAt   DateTime @default(now())
+  
+  @@map("drawing_revisions")
+}
+
+// Contractors: Daily Logs & Attendance
+model DailyLog {
+  id          String   @id @default(uuid())
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id])
+  
+  date        DateTime @default(now())
+  weather     String?
+  
+  description String   @db.Text
+  images      String[] // Progress photos
+  
+  materials   MaterialUsage[]
+  labor       LaborAttendance[]
+  machinery   MachineryUsage[]
+
+  @@map("daily_logs")
+}
+
+model MaterialUsage {
+  id          String   @id @default(uuid())
+  dailyLogId  String
+  dailyLog    DailyLog @relation(fields: [dailyLogId], references: [id])
+  
+  itemName    String
+  quantity    Float
+  unit        String
+  
+  @@map("material_usages")
+}
+
+model LaborAttendance {
+  id          String   @id @default(uuid())
+  dailyLogId  String
+  dailyLog    DailyLog @relation(fields: [dailyLogId], references: [id])
+  
+  workerCount Int
+  category    String   // "Masons", "Helpers"
+  totalHours  Float
+  
+  @@map("labor_attendance")
+}
+
+model MachineryUsage {
+  id          String   @id @default(uuid())
+  dailyLogId  String
+  dailyLog    DailyLog @relation(fields: [dailyLogId], references: [id])
+  
+  machineName String
+  hoursUsed   Float
+  
+  @@map("machinery_usage")
+}
+
+// Auditors: Financials & OCR
+model Budget {
+  id          String   @id @default(uuid())
+  projectId   String   @unique
+  project     Project  @relation(fields: [projectId], references: [id])
+  
+  totalAmount Decimal  @db.Decimal(15, 2)
+  items       BudgetItem[]
+  invoices    Invoice[]
+  
+  @@map("budgets")
+}
+
+model BudgetItem {
+  id          String   @id @default(uuid())
+  budgetId    String
+  budget      Budget   @relation(fields: [budgetId], references: [id])
+  
+  category    String   // Material, Labor, Admin
+  allocated   Decimal  @db.Decimal(15, 2)
+  spent       Decimal  @default(0) @db.Decimal(15, 2)
+  
+  @@map("budget_items")
+}
+
+model Invoice {
+  id          String   @id @default(uuid())
+  budgetId    String
+  budget      Budget   @relation(fields: [budgetId], references: [id])
+  
+  amount      Decimal  @db.Decimal(15, 2)
+  vendorName  String
+  imageUrl    String
+  
+  // AI/OCR Data extraction
+  ocrData     Json?    // { rawText, confidence, lineItems }
+  isVerified  Boolean  @default(false)
+  
+  status      InvoiceStatus @default(PENDING)
+  
+  createdAt   DateTime @default(now())
+  
+  @@map("invoices")
+}
+
+enum InvoiceStatus {
+  PENDING
+  APPROVED
+  PAID
+  REJECTED
+}
+
+// Transparency & Anti-Corruption
+model AuditLog {
+  id          String   @id @default(uuid())
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id])
+  
+  action      String   // "BUDGET_MODIFIED", "TENDER_AWARDED"
+  actorId     String
+  details     Json     // Snapshot of before/after
+  
+  createdAt   DateTime @default(now())
+  
+  @@map("audit_logs")
+}
+
+// --------------------------------------------------------
+// 6. MARKETPLACE & JOB BOARD
+// --------------------------------------------------------
+
+model ProductListing {
+  id          String   @id @default(uuid())
+  supplierId  String
+  supplier    SupplierProfile @relation(fields: [supplierId], references: [id])
+  
+  name        String
+  description String
+  price       Decimal  @db.Decimal(10, 2)
+  unit        String   // per bag, per ton
+  category    String
+  imageUrl    String?
+  stock       Int
+  
+  @@map("product_listings")
+}
+
+model JobPosting {
+  id          String   @id @default(uuid())
+  posterId    String
+  poster      User     @relation(fields: [posterId], references: [id])
+  
+  title       String
+  location    String
+  wage        String
+  skillsReq   String[]
+  
+  applications JobApplication[]
+  
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  
+  @@map("job_postings")
+}
+
+model JobApplication {
+  id          String   @id @default(uuid())
+  jobId       String
+  job         JobPosting @relation(fields: [jobId], references: [id])
+  
+  applicantId String
+  applicant   User     @relation(fields: [applicantId], references: [id])
+  
+  status      String   // APPLIED, SHORTLISTED, HIRED
+  
+  createdAt   DateTime @default(now())
+  
+  @@unique([jobId, applicantId])
+  @@map("job_applications")
+}
+
+// --------------------------------------------------------
+// 7. SOCIAL & COMMUNICATION (LinkedIn/Reddit Style)
+// --------------------------------------------------------
+
+model Post {
+  id          String   @id @default(uuid())
+  authorId    String
+  author      User     @relation(fields: [authorId], references: [id])
+  
+  content     String   @db.Text
+  images      String[]
+  tags        String[] // ["#CivilEngineering", "#Tips"]
+  
+  likes       Int      @default(0)
+  comments    Comment[]
+  
+  createdAt   DateTime @default(now())
+
+  @@map("posts")
+}
+
+model Comment {
+  id          String   @id @default(uuid())
+  postId      String
+  post        Post     @relation(fields: [postId], references: [id])
+  authorId    String
+  author      User     @relation(fields: [authorId], references: [id])
+  
+  content     String
+  createdAt   DateTime @default(now())
+  
+  @@map("comments")
+}
+
+model Follows {
+  followerId  String
+  followingId String
+  follower    User     @relation("follower", fields: [followerId], references: [id])
+  following   User     @relation("following", fields: [followingId], references: [id])
+
+  @@id([followerId, followingId])
+  @@map("follows")
+}
+
+model Review {
+  id            String   @id @default(uuid())
+  authorId      String
+  targetUserId  String
+  projectId     String?  // Optional: Link review to specific project for verification
+  
+  author        User     @relation("ReviewAuthor", fields: [authorId], references: [id])
+  target        User     @relation("ReviewTarget", fields: [targetUserId], references: [id])
+  
+  rating        Int      // 1-5
+  comment       String?
+  
+  createdAt     DateTime @default(now())
+
+  @@map("reviews")
+}
+
+// Chat System with AI Voice Notes
+model Conversation {
+  id          String   @id @default(uuid())
+  isGroup     Boolean  @default(false)
+  name        String?  // For group chats
+  
+  members     ConversationMember[]
+  messages    Message[]
+  
+  updatedAt   DateTime @updatedAt // For sorting inbox
+  
+  @@map("conversations")
+}
+
+model ConversationMember {
+  id              String       @id @default(uuid())
+  conversationId  String
+  conversation    Conversation @relation(fields: [conversationId], references: [id])
+  userId          String
+  user            User         @relation(fields: [userId], references: [id])
+  
+  @@unique([conversationId, userId])
+  @@map("conversation_members")
+}
+
+model Message {
+  id              String       @id @default(uuid())
+  conversationId  String
+  conversation    Conversation @relation(fields: [conversationId], references: [id])
+  senderId        String
+  sender          User         @relation(fields: [senderId], references: [id])
+  
+  content         String?      // Text content
+  
+  // AI Voice Note Features
+  audioUrl        String?
+  transcription   String?      @db.Text
+  
+  attachments     String[]
+  
+  createdAt       DateTime     @default(now())
+  
+  @@map("messages")
+}
+
+model ProjectDocument {
+    id        String @id @default(uuid())
+    projectId String
+    project   Project @relation(fields: [projectId], references: [id])
+    
+    name      String
+    category  String // PERMIT, CONTRACT, BLUEPRINT
+    url       String
+    
+    uploadedAt DateTime @default(now())
+    
+    @@map("project_documents")
+}
+
 
 
