@@ -1,0 +1,13 @@
+enum TenderType {
+  GOVERNMENT
+  PRIVATE
+}
+
+enum TenderStatus {
+  DRAFT
+  OPEN
+  EVALUATING
+  AWARDED
+  CLOSED
+  CANCELLED
+}

@@ -1,0 +1,74 @@
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  phoneNumber   String?   @unique
+  passwordHash  String
+  
+  firstName     String
+  lastName      String
+  avatarUrl     String?
+  bio           String?   @db.Text
+  
+  role          UserRole
+  isVerified    Boolean   @default(false)
+  isActive      Boolean   @default(true)
+  
+  // KYC
+  kycRecord     KYCRecord?
+  
+  // Profiles
+  contractorProfile ContractorProfile?
+  workerProfile     WorkerProfile?
+  supplierProfile   SupplierProfile?
+  clientProfile     ClientProfile?
+  
+  // Social
+  followedBy    Follows[] @relation("following")
+  following     Follows[] @relation("follower")
+  posts         Post[]
+  comments      Comment[]
+  achievements  UserAchievement[]
+  
+  // Reviews
+  sentReviews     Review[]  @relation("ReviewAuthor")
+  receivedReviews Review[]  @relation("ReviewTarget")
+  
+  // Projects
+  projectsOwned    Project[]       @relation("ProjectOwner")
+  projectMemberships ProjectMember[] 
+  
+  // Tendering
+  issuedTenders    Tender[]        @relation("TenderIssuer")
+  bids             Bid[]
+  contracts        Contract[]
+  
+  // Communication
+  sentMessages     Message[]
+  conversations    ConversationMember[]
+  
+  // Job Market
+  postedJobs       JobPosting[]
+  jobApplications  JobApplication[]
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@map("users")
+  @@index([email, phoneNumber])
+}
+
+model KYCRecord {
+  id              String    @id @default(uuid())
+  userId          String    @unique
+  user            User      @relation(fields: [userId], references: [id])
+  
+  documentType    String    
+  documentNumber  String
+  documentUrl     String    
+  
+  status          KYCStatus @default(PENDING)
+  verifiedAt      DateTime?
+  rejectionReason String?
+
+  @@map("kyc_records")
+}

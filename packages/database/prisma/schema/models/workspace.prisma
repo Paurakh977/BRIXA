@@ -1,0 +1,80 @@
+model Drawing {
+  id          String   @id @default(uuid())
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id])
+  
+  title       String   
+  category    String   
+  
+  revisions   DrawingRevision[]
+  
+  @@map("drawings")
+}
+
+model DrawingRevision {
+  id          String   @id @default(uuid())
+  drawingId   String
+  drawing     Drawing  @relation(fields: [drawingId], references: [id])
+  
+  version     Int      
+  fileUrl     String
+  uploadedBy  String
+  comments    String?
+  
+  createdAt   DateTime @default(now())
+  
+  @@map("drawing_revisions")
+}
+
+model DailyLog {
+  id          String   @id @default(uuid())
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id])
+  
+  date        DateTime @default(now())
+  weather     String?
+  
+  description String   @db.Text
+  images      String[] 
+  
+  materials   MaterialUsage[]
+  labor       LaborAttendance[]
+  machinery   MachineryUsage[]
+
+  @@map("daily_logs")
+}
+
+model MaterialUsage {
+  id          String   @id @default(uuid())
+  dailyLogId  String
+  dailyLog    DailyLog @relation(fields: [dailyLogId], references: [id])
+  
+  itemName    String
+  quantity    Float
+  unit        String
+  
+  @@map("material_usages")
+}
+
+model LaborAttendance {
+  id          String   @id @default(uuid())
+  dailyLogId  String
+  dailyLog    DailyLog @relation(fields: [dailyLogId], references: [id])
+  
+  workerCount Int
+  category    String   
+  totalHours  Float
+  
+  @@map("labor_attendance")
+}
+
+model MachineryUsage {
+  id          String   @id @default(uuid())
+  dailyLogId  String
+  dailyLog    DailyLog @relation(fields: [dailyLogId], references: [id])
+  
+  machineName String
+  hoursUsed   Float
+  
+  @@map("machinery_usage")
+}

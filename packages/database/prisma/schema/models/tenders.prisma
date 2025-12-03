@@ -1,0 +1,65 @@
+model Tender {
+  id          String       @id @default(uuid())
+  issuerId    String
+  issuer      User         @relation("TenderIssuer", fields: [issuerId], references: [id])
+  
+  title       String
+  description String       @db.Text
+  type        TenderType
+  status      TenderStatus @default(DRAFT)
+  
+  location    String
+  budgetMin   Decimal      @db.Decimal(15, 2)
+  budgetMax   Decimal      @db.Decimal(15, 2)
+  
+  deadline    DateTime
+  attachments String[]     
+  criteria    Json?        
+  
+  bids        Bid[]
+  project     Project?     
+
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@map("tenders")
+  @@index([status, type, location])
+}
+
+model Bid {
+  id          String   @id @default(uuid())
+  tenderId    String
+  tender      Tender   @relation(fields: [tenderId], references: [id])
+  
+  bidderId    String
+  bidder      User     @relation(fields: [bidderId], references: [id])
+  
+  amount      Decimal  @db.Decimal(15, 2)
+  proposal    String   @db.Text 
+  documents   String[] 
+  
+  estimatedDays Int
+  isWinner    Boolean  @default(false)
+  score       Float?   
+
+  createdAt   DateTime @default(now())
+
+  @@map("bids")
+}
+
+model Contract {
+  id          String   @id @default(uuid())
+  title       String
+  content     String   @db.Text 
+  
+  signatory1Id String
+  signatory1   User    @relation(fields: [signatory1Id], references: [id]) 
+  
+  projectId   String?
+  project     Project? @relation(fields: [projectId], references: [id])
+  
+  status      String   
+  signedAt    DateTime?
+
+  @@map("contracts")
+}

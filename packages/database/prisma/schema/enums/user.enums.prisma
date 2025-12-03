@@ -1,0 +1,19 @@
+enum UserRole {
+  ADMIN
+  GOVT_OFFICIAL
+  CONTRACTOR
+  ARCHITECT
+  ENGINEER
+  AUDITOR
+  WORKER          // Laborer, Plumber, etc.
+  MANPOWER_AGENCY
+  SUPPLIER        // Hardware/Material
+  MACHINERY_OWNER
+  CLIENT          // Personal home builder
+}
+
+enum KYCStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}

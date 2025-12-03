@@ -1,0 +1,56 @@
+model Budget {
+  id          String   @id @default(uuid())
+  projectId   String   @unique
+  project     Project  @relation(fields: [projectId], references: [id])
+  
+  totalAmount Decimal  @db.Decimal(15, 2)
+  items       BudgetItem[]
+  invoices    Invoice[]
+  
+  @@map("budgets")
+}
+
+model BudgetItem {
+  id          String   @id @default(uuid())
+  budgetId    String
+  budget      Budget   @relation(fields: [budgetId], references: [id])
+  
+  category    String   
+  allocated   Decimal  @db.Decimal(15, 2)
+  spent       Decimal  @default(0) @db.Decimal(15, 2)
+  
+  @@map("budget_items")
+}
+
+model Invoice {
+  id          String   @id @default(uuid())
+  budgetId    String
+  budget      Budget   @relation(fields: [budgetId], references: [id])
+  
+  amount      Decimal  @db.Decimal(15, 2)
+  vendorName  String
+  imageUrl    String
+  
+  ocrData     Json?    
+  isVerified  Boolean  @default(false)
+  
+  status      InvoiceStatus @default(PENDING)
+  
+  createdAt   DateTime @default(now())
+  
+  @@map("invoices")
+}
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id])
+  
+  action      String   
+  actorId     String
+  details     Json     
+  
+  createdAt   DateTime @default(now())
+  
+  @@map("audit_logs")
+}
