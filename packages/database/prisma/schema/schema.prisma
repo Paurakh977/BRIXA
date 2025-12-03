@@ -1,0 +1,9 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["prismaSchemaFolder", "fullTextSearch", "postgresqlExtensions"]
+  output          = "../../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
