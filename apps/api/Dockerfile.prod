@@ -1,16 +1,13 @@
-# -------------------------
-# -------------------------
+
 FROM node:22-alpine AS base
 RUN apk add --no-cache libc6-compat openssl
 WORKDIR /app
 
-# 1. Prune
 FROM base AS builder
 RUN npm install -g pnpm@8.15.5 turbo
 COPY . .
 RUN turbo prune --scope=api --docker
 
-# 2. Install & Build & Deploy
 FROM base AS installer
 RUN npm install -g pnpm@8.15.5
 WORKDIR /app
@@ -18,37 +15,27 @@ WORKDIR /app
 COPY --from=builder /app/out/json/ .
 COPY --from=builder /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
 
-# Install all deps (including dev) for building
 RUN pnpm install --frozen-lockfile
 
-# Copy source
 COPY --from=builder /app/out/full/ .
 COPY turbo.json turbo.json
 
-# Build the project
 RUN pnpm turbo run build --filter=api...
 
-# Deploy the api package to a clean directory
-# This copies the package and installs ONLY production dependencies
 RUN pnpm deploy --filter=api --prod /prod/api
 
-# 3. Runner
 FROM base AS runner
 WORKDIR /app
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nestjs
 
-# Copy the deployed app
 COPY --from=installer --chown=nestjs:nodejs /prod/api .
 
 USER nestjs
 
-# Expose port (optional but good practice)
 EXPOSE 3000
 
-# Ensure DATABASE_URL is available at runtime
 ENV DATABASE_URL=$DATABASE_URL
 
-# Use direct path to prisma binary to avoid npx lookup issues
 CMD sh -c "./node_modules/.bin/prisma migrate deploy --schema=node_modules/@BRIXA/database/prisma/schema.prisma --config=node_modules/@BRIXA/database/prisma.config.ts && node dist/main"
