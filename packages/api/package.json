@@ -27,7 +27,9 @@
     }
   },
   "dependencies": {
-    "@nestjs/mapped-types": "*"
+    "@nestjs/mapped-types": "*",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.3"
   },
   "devDependencies": {
     "@BRIXA/eslint-config": "workspace:*",
