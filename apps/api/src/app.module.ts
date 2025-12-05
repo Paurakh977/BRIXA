@@ -4,6 +4,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { AuthModule } from './auth/auth.module';
 import { DatabaseModule } from './database/database.module';
 import { LinksModule } from './links/links.module';
+import { AdminModule } from './admin/admin.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
@@ -21,6 +22,7 @@ import { configuration, validate } from './config/configuration';
     }),
     DatabaseModule,
     AuthModule,
+    AdminModule,
     LinksModule,
   ],
   controllers: [AppController],
