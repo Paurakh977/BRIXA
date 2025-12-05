@@ -1,0 +1,6 @@
+enum InvoiceStatus {
+  PENDING
+  APPROVED
+  PAID
+  REJECTED
+}

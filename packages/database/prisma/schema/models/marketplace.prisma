@@ -1,0 +1,49 @@
+model ProductListing {
+  id          String   @id @default(uuid())
+  supplierId  String
+  supplier    SupplierProfile @relation(fields: [supplierId], references: [id])
+  
+  name        String
+  description String
+  price       Decimal  @db.Decimal(10, 2)
+  unit        String   
+  category    String
+  imageUrl    String?
+  stock       Int
+  
+  @@map("product_listings")
+}
+
+model JobPosting {
+  id          String   @id @default(uuid())
+  posterId    String
+  poster      User     @relation(fields: [posterId], references: [id])
+  
+  title       String
+  location    String
+  wage        String
+  skillsReq   String[]
+  
+  applications JobApplication[]
+  
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  
+  @@map("job_postings")
+}
+
+model JobApplication {
+  id          String   @id @default(uuid())
+  jobId       String
+  job         JobPosting @relation(fields: [jobId], references: [id])
+  
+  applicantId String
+  applicant   User     @relation(fields: [applicantId], references: [id])
+  
+  status      String   
+  
+  createdAt   DateTime @default(now())
+  
+  @@unique([jobId, applicantId])
+  @@map("job_applications")
+}

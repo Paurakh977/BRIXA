@@ -38,4 +38,4 @@ EXPOSE 3000
 
 ENV DATABASE_URL=$DATABASE_URL
 
-CMD sh -c "./node_modules/.bin/prisma migrate deploy --schema=node_modules/@BRIXA/database/prisma/schema.prisma --config=node_modules/@BRIXA/database/prisma.config.ts && node dist/main"
+CMD sh -c "./node_modules/.bin/prisma migrate deploy --schema=node_modules/@BRIXA/database/prisma/schema/ --config=node_modules/@BRIXA/database/prisma.config.ts && node dist/main"

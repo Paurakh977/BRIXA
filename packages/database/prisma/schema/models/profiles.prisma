@@ -1,0 +1,75 @@
+model ContractorProfile {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id])
+  
+  companyName     String?
+  licenseNumber   String?
+  specializations String[] 
+  
+  projectsCompleted Int      @default(0)
+  totalBudgetManaged Decimal @default(0.0) @db.Decimal(15, 2)
+  onTimeRate         Float   @default(100.0) 
+  avgRating          Float   @default(0.0)
+
+  @@map("contractor_profiles")
+}
+
+model WorkerProfile {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id])
+  
+  trade           String   
+  hourlyRate      Decimal  @db.Decimal(10, 2)
+  yearsExperience Int
+  skills          String[] 
+  isAvailable     Boolean  @default(true)
+  
+  @@map("worker_profiles")
+}
+
+model SupplierProfile {
+  id          String   @id @default(uuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id])
+  shopName    String
+  categories  String[] 
+  
+  products    ProductListing[]
+  
+  @@map("supplier_profiles")
+}
+
+model ClientProfile {
+  id          String   @id @default(uuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id])
+  
+  preferences Json?
+  
+  @@map("client_profiles")
+}
+
+model Achievement {
+  id          String   @id @default(uuid())
+  slug        String   @unique 
+  name        String
+  description String
+  iconUrl     String
+  
+  users       UserAchievement[]
+  
+  @@map("achievements")
+}
+
+model UserAchievement {
+  userId        String
+  achievementId String
+  user          User        @relation(fields: [userId], references: [id])
+  achievement   Achievement @relation(fields: [achievementId], references: [id])
+  awardedAt     DateTime    @default(now())
+
+  @@id([userId, achievementId])
+  @@map("user_achievements")
+}

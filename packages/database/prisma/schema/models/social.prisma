@@ -1,0 +1,56 @@
+model Post {
+  id          String   @id @default(uuid())
+  authorId    String
+  author      User     @relation(fields: [authorId], references: [id])
+  
+  content     String   @db.Text
+  images      String[]
+  tags        String[] 
+  
+  likes       Int      @default(0)
+  comments    Comment[]
+  
+  createdAt   DateTime @default(now())
+
+  @@map("posts")
+}
+
+model Comment {
+  id          String   @id @default(uuid())
+  postId      String
+  post        Post     @relation(fields: [postId], references: [id])
+  authorId    String
+  author      User     @relation(fields: [authorId], references: [id])
+  
+  content     String
+  createdAt   DateTime @default(now())
+  
+  @@map("comments")
+}
+
+model Follows {
+  followerId  String
+  followingId String
+  follower    User     @relation("follower", fields: [followerId], references: [id])
+  following   User     @relation("following", fields: [followingId], references: [id])
+
+  @@id([followerId, followingId])
+  @@map("follows")
+}
+
+model Review {
+  id            String   @id @default(uuid())
+  authorId      String
+  targetUserId  String
+  projectId     String?  
+  
+  author        User     @relation("ReviewAuthor", fields: [authorId], references: [id])
+  target        User     @relation("ReviewTarget", fields: [targetUserId], references: [id])
+  
+  rating        Int      
+  comment       String?
+  
+  createdAt     DateTime @default(now())
+
+  @@map("reviews")
+}

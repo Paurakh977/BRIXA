@@ -6,7 +6,7 @@ import { DatabaseService } from './database/database.service';
 export class AppController {
   constructor(
     private readonly appService: AppService,
-    private readonly dbService: DatabaseService // Inject DB Service
+    private readonly dbService: DatabaseService 
   ) {}
 
   @Get()
@@ -15,8 +15,9 @@ export class AppController {
   }
 
   // 👇 Endpoint called by React Button
-  @Post('seed')
-  async seedDatabase() {
-    return this.dbService.resetAndSeed();
-  }
+//   @Post('seed')
+//   async seedDatabase() {
+//     return this.dbService.resetAndSeed();
+//   }
+
 }

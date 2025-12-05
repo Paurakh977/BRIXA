@@ -1,0 +1,40 @@
+model Conversation {
+  id          String   @id @default(uuid())
+  isGroup     Boolean  @default(false)
+  name        String?  
+  
+  members     ConversationMember[]
+  messages    Message[]
+  
+  updatedAt   DateTime @updatedAt 
+  
+  @@map("conversations")
+}
+
+model ConversationMember {
+  id              String       @id @default(uuid())
+  conversationId  String
+  conversation    Conversation @relation(fields: [conversationId], references: [id])
+  userId          String
+  user            User         @relation(fields: [userId], references: [id])
+  
+  @@unique([conversationId, userId])
+  @@map("conversation_members")
+}
+
+model Message {
+  id              String       @id @default(uuid())
+  conversationId  String
+  conversation    Conversation @relation(fields: [conversationId], references: [id])
+  senderId        String
+  sender          User         @relation(fields: [senderId], references: [id])
+  
+  content         String?      
+  audioUrl        String?
+  transcription   String?      @db.Text
+  attachments     String[]
+  
+  createdAt       DateTime     @default(now())
+  
+  @@map("messages")
+}

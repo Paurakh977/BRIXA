@@ -1,0 +1,14 @@
+enum ProjectRole {
+  MANAGER
+  ARCHITECT
+  AUDITOR
+  SITE_SUPERVISOR
+  VIEWER
+}
+
+enum PhaseStatus {
+  PLANNED
+  IN_PROGRESS
+  DELAYED
+  COMPLETED
+}

@@ -1,0 +1,91 @@
+model Project {
+  id          String   @id @default(uuid())
+  
+  qrCode      String   @unique 
+  isPublic    Boolean  @default(false) 
+  
+  name        String
+  description String?
+  location    Json     
+  
+  ownerId     String
+  owner       User     @relation("ProjectOwner", fields: [ownerId], references: [id])
+  
+  tenderId    String?  @unique
+  tender      Tender?  @relation(fields: [tenderId], references: [id])
+  
+  startDate   DateTime?
+  endDate     DateTime?
+  
+  phases      ProjectPhase[]
+  drawings    Drawing[]
+  budget      Budget?
+  dailyLogs   DailyLog[]
+  auditLogs   AuditLog[]
+  members     ProjectMember[]
+  contracts   Contract[]
+  documents   ProjectDocument[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("projects")
+  @@index([qrCode])
+}
+
+model ProjectMember {
+  id        String      @id @default(uuid())
+  projectId String
+  userId    String
+  role      ProjectRole
+  
+  project   Project     @relation(fields: [projectId], references: [id])
+  user      User        @relation(fields: [userId], references: [id])
+
+  @@unique([projectId, userId])
+  @@map("project_members")
+}
+
+model ProjectPhase {
+  id          String    @id @default(uuid())
+  projectId   String
+  project     Project   @relation(fields: [projectId], references: [id])
+  
+  name        String    
+  startDate   DateTime
+  endDate     DateTime
+  
+  status      PhaseStatus @default(PLANNED)
+  
+  actualStartDate DateTime?
+  actualEndDate   DateTime?
+  
+  tasks       Task[]
+
+  @@map("project_phases")
+}
+
+model Task {
+  id          String   @id @default(uuid())
+  phaseId     String
+  phase       ProjectPhase @relation(fields: [phaseId], references: [id])
+  
+  title       String
+  isCompleted Boolean  @default(false)
+  
+  @@map("tasks")
+}
+
+model ProjectDocument {
+    id        String @id @default(uuid())
+    projectId String
+    project   Project @relation(fields: [projectId], references: [id])
+    
+    name      String
+    category  String 
+    url       String
+    
+    uploadedAt DateTime @default(now())
+    
+    @@map("project_documents")
+}

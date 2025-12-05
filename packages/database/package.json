@@ -10,7 +10,7 @@
     "prisma.config.ts"
   ],
   "scripts": {
-    "build": "prisma generate && tsc",
+    "build": "prisma generate && tsc && shx cp -r generated dist/generated",
     "dev": "prisma generate --watch",
     "prisma": "prisma",
     "db:push": "prisma db push",
@@ -26,6 +26,7 @@
     "@BRIXA/typescript-config": "workspace:*",
     "@types/node": "^20.11.0",
     "@types/pg": "^8.15.6",
+    "shx": "^0.4.0",
     "ts-node": "^10.9.2",
     "tsx": "^4.20.6",
     "typescript": "^5.3.3"
@@ -33,6 +34,7 @@
   "dependencies": {
     "@prisma/adapter-pg": "^7.0.0",
     "@prisma/client": "^7.0.0",
+    "@prisma/client-runtime-utils": "^7.1.0",
     "dotenv": "^17.2.3",
     "pg": "^8.16.3",
     "prisma": "^7.0.0"
