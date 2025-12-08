@@ -1,18 +1,5 @@
 import { IsEmail, IsNotEmpty, IsString, IsOptional, IsBoolean, IsEnum, MinLength } from 'class-validator';
-
-export enum UserRole {
-  ADMIN = 'ADMIN',
-  GOVT_OFFICIAL = 'GOVT_OFFICIAL',
-  CONTRACTOR = 'CONTRACTOR',
-  ARCHITECT = 'ARCHITECT',
-  ENGINEER = 'ENGINEER',
-  AUDITOR = 'AUDITOR',
-  WORKER = 'WORKER',
-  MANPOWER_AGENCY = 'MANPOWER_AGENCY',
-  SUPPLIER = 'SUPPLIER',
-  MACHINERY_OWNER = 'MACHINERY_OWNER',
-  CLIENT = 'CLIENT'
-}
+import { UserRole } from '../../types/user.types';
 
 export class CreateUserDto {
   @IsEmail()
@@ -57,10 +44,21 @@ export class UpdateUserDto {
   @IsBoolean()
   @IsOptional()
   isActive?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  isVerified?: boolean;
 }
 
 export class ToggleUserStatusDto {
   @IsBoolean()
   @IsNotEmpty()
   isActive: boolean;
+}
+
+export class ResetPasswordDto {
+  @IsString()
+  @IsNotEmpty()
+  @MinLength(6)
+  password: string;
 }
