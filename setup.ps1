@@ -5,7 +5,7 @@
 # ===============================
 
 # NOTE Clear all cache dirs for fresh start
-# Get-ChildItem -Path . -Include node_modules,.turbo,dist -Recurse -Directory -Force | Remove-Item -Recurse -Force
+# Get-ChildItem -Path . -Include node_modules,.turbo,dist,.next -Recurse -Directory -Force | Remove-Item -Recurse -Force
 
 Write-Host "Starting BRIXA Setup..." -ForegroundColor Cyan
 
