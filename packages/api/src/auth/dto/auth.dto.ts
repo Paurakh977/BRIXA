@@ -1,4 +1,5 @@
-import { IsEmail, IsNotEmpty, IsString, MinLength } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsString, MinLength, IsOptional, IsEnum } from 'class-validator';
+import { UserRole } from '../../types/user.types';
 
 export class LoginDto {
   @IsEmail()
@@ -19,4 +20,8 @@ export class RegisterDto extends LoginDto {
   @IsString()
   @IsNotEmpty()
   lastName: string;
+
+  @IsEnum(UserRole)
+  @IsOptional()
+  role?: UserRole;
 }
