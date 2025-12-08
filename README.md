@@ -164,7 +164,7 @@ BRIXA/
 │   │   └── src/
 │   │       └── index.ts
 │   │
-│   ├── prisma-config/            # Shared Prisma schema
+│   ├── Database/            # Shared Prisma schema
 │   │
 │   ├── eslint-config/            # Shared ESLint configs
 │   │   ├── base.js
