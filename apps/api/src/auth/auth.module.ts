@@ -6,6 +6,7 @@ import { AuthService } from './auth.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { DatabaseModule } from '../database/database.module';
 import { SecurityService } from '../common/services/security.service';
+import { UserCacheService } from '../common/services/user-cache.service';
 
 @Module({
   imports: [
@@ -25,7 +26,7 @@ import { SecurityService } from '../common/services/security.service';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, SecurityService],
-  exports: [AuthService],
+  providers: [AuthService, JwtStrategy, SecurityService, UserCacheService],
+  exports: [AuthService, UserCacheService],
 })
 export class AuthModule {}

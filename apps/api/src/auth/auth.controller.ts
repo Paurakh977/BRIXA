@@ -6,6 +6,7 @@ import {
   UseGuards,
   Get,
   Req,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto, RegisterDto } from '@BRIXA/api';
@@ -20,8 +21,8 @@ export class AuthController {
 
   @Public()
   @Post('register')
-  signup(@Body() dto: RegisterDto) {
-    return this.authService.register(dto);
+  signup(@Body() dto: RegisterDto, @Res({ passthrough: true }) res: Response) {
+    return this.authService.register(dto, res);
   }
 
   @Public()
@@ -34,6 +35,17 @@ export class AuthController {
   @Public()
   @Post('refresh')
   refreshToken(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    const refreshToken = req.cookies['brixa_refresh'];
+    if (refreshToken) {
+      try {
+        // Decode the refresh token to get email for logging
+        const payload = this.authService.decodeRefreshToken(refreshToken);
+        console.log(`[REFRESH] User email: ${payload?.email}, User ID: ${payload?.sub}`);
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        console.log(`[REFRESH] Failed to decode refresh token: ${errorMessage}`);
+      }
+    }
     return this.authService.refresh(req, res);
   }
 
@@ -42,9 +54,10 @@ export class AuthController {
     return this.authService.logout(res);
   }
 
-  // For Protected Route
+  // For Protected Route - Returns full user data (requires DB lookup)
   @Get('me')
   getProfile(@GetUser() user: User) {
     return user;
   }
+
 }
