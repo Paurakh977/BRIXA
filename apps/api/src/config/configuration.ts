@@ -1,5 +1,5 @@
-import { plainToClass } from 'class-transformer';
-import { IsEnum, IsNumber, IsString, validateSync } from 'class-validator';
+import { Expose, plainToClass } from 'class-transformer';
+import { IsEnum, IsNumber, IsOptional, IsString, validateSync } from 'class-validator';
 
 enum Environment {
   Development = 'development',
@@ -8,57 +8,89 @@ enum Environment {
 }
 
 class EnvironmentVariables {
+  // --- 1. Define Defaults & Expose Fields ---
+  // @Expose() is REQUIRED here to filter out the npm_... junk variables
+
+  @Expose()
   @IsEnum(Environment)
-  NODE_ENV: Environment;
+  @IsOptional()
+  NODE_ENV: Environment = Environment.Development;
 
+  @Expose()
   @IsNumber()
-  APP_PORT: number;
+  @IsOptional()
+  APP_PORT: number = 8000;
 
+  @Expose()
   @IsString()
-  APP_URL: string;
+  @IsOptional()
+  APP_URL: string = 'http://localhost:8000';
 
+  @Expose()
   @IsString()
-  DATABASE_URL: string;
+  DATABASE_URL: string; // Required
 
+  @Expose()
   @IsString()
-  JWT_SECRET: string;
+  JWT_SECRET: string; // Required
 
+  @Expose()
   @IsString()
-  JWT_REFRESH_SECRET: string;
+  JWT_REFRESH_SECRET: string; // Required
 
+  @Expose()
   @IsString()
-  JWT_ACCESS_EXPIRATION: string;
+  @IsOptional()
+  JWT_ACCESS_EXPIRATION: string = '15m';
 
+  @Expose()
   @IsString()
-  JWT_REFRESH_EXPIRATION: string;
+  @IsOptional()
+  JWT_REFRESH_EXPIRATION: string = '7d';
 
+  @Expose()
   @IsString()
-  CORS_ORIGIN: string;
+  @IsOptional()
+  CORS_ORIGIN: string = 'http://localhost:3000';
 
+  @Expose()
   @IsNumber()
-  RATE_LIMIT_WINDOW_MS: number;
+  @IsOptional()
+  RATE_LIMIT_WINDOW_MS: number = 900000;
 
+  @Expose()
   @IsNumber()
-  RATE_LIMIT_MAX_REQUESTS: number;
+  @IsOptional()
+  RATE_LIMIT_MAX_REQUESTS: number = 100;
 
+  @Expose()
   @IsString()
-  API_KEY: string;
+  API_KEY: string; // Required
 
+  @Expose()
   @IsNumber()
-  BCRYPT_ROUNDS: number;
+  @IsOptional()
+  BCRYPT_ROUNDS: number = 10;
 
+  @Expose()
   @IsString()
-  SESSION_SECRET: string;
+  SESSION_SECRET: string; // Required
 
+  @Expose()
   @IsString()
-  LOG_LEVEL: string;
+  @IsOptional()
+  LOG_LEVEL: string = 'debug';
 }
 
 export function validate(config: Record<string, unknown>) {
+  // 1. Transform raw config to Class
+  // excludeExtraneousValues: true -> This removes all the npm_ junk variables
   const validatedConfig = plainToClass(EnvironmentVariables, config, {
     enableImplicitConversion: true,
+    excludeExtraneousValues: true, 
   });
 
+  // 2. Validate constraints
   const errors = validateSync(validatedConfig, {
     skipMissingProperties: false,
   });
@@ -67,13 +99,30 @@ export function validate(config: Record<string, unknown>) {
     throw new Error(errors.toString());
   }
 
+  // 3. Print Status (Unmasked)
+  console.log('\n--- 🔧 ENVIRONMENT CONFIGURATION ---');
+  
+  Object.keys(validatedConfig).forEach((key) => {
+    const isSetInEnv = config[key] !== undefined;
+    const finalValue = validatedConfig[key];
+
+    if (!isSetInEnv) {
+      // Missing in .env, using Class Default
+      console.log(`⚠️  ${key.padEnd(25)} : Not set. Using Default -> ${finalValue}`);
+    } else {
+      // Set in .env
+      console.log(`✅ ${key.padEnd(25)} : Set by Env. Value     -> ${finalValue}`);
+    }
+  });
+  console.log('------------------------------------\n');
+
   return validatedConfig;
 }
 
 export function configuration() {
   return {
     app: {
-      port: parseInt(process.env.APP_PORT) || 8000,
+      port: parseInt(process.env.APP_PORT, 10) || 8000,
       url: process.env.APP_URL || 'http://localhost:8000',
       env: process.env.NODE_ENV || Environment.Development,
     },
@@ -90,11 +139,11 @@ export function configuration() {
       origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
     },
     rateLimit: {
-      windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 900000,
-      maxRequests: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100,
+      windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS, 10) || 900000,
+      maxRequests: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS, 10) || 100,
     },
     security: {
-      bcryptRounds: parseInt(process.env.BCRYPT_ROUNDS) || 10,
+      bcryptRounds: parseInt(process.env.BCRYPT_ROUNDS, 10) || 10,
       sessionSecret: process.env.SESSION_SECRET,
     },
     logging: {
