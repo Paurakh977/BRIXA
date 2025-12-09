@@ -7,7 +7,6 @@ import {
   Body,
   Param,
   Query,
-  UseGuards,
   ParseIntPipe,
   DefaultValuePipe,
 } from '@nestjs/common';
@@ -15,7 +14,7 @@ import { AdminService } from './admin.service';
 import { Roles } from '../common/decorators/roles.decorator';
 import { GetUser } from '../common/decorators/get-user.decorator';
 import { User } from '@BRIXA/database';
-import { CreateUserDto, UpdateUserDto, ToggleUserStatusDto } from './dto/admin.dto';
+import { CreateUserDto, UpdateUserDto, ToggleUserStatusDto, ResetPasswordDto } from '@BRIXA/api';
 
 @Controller('admin')
 @Roles('ADMIN')
@@ -58,7 +57,7 @@ export class AdminController {
   ) {
     // Log the admin who updated the user
     console.log(`Admin ${currentUser.email} updated user ${id}`);
-    return this.adminService.updateUser(id, data);
+    return this.adminService.updateUser(id, data, currentUser.id);
   }
 
   @Delete('users/:id')
@@ -74,11 +73,12 @@ export class AdminController {
   @Post('users/:id/reset-password')
   async resetUserPassword(
     @Param('id') id: string,
+    @Body() dto: ResetPasswordDto,
     @GetUser() currentUser: User,
   ) {
     // Log the admin who reset the password
     console.log(`Admin ${currentUser.email} reset password for user ${id}`);
-    return this.adminService.resetUserPassword(id);
+    return this.adminService.resetUserPassword(id, dto.password);
   }
 
   @Patch('users/:id/status')
