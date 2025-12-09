@@ -7,7 +7,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuth } from '../../contexts/AuthContext';
-import { UserRole } from '../../types/auth';
+import { UserRole } from '@BRIXA/api';
 
 const registerSchema = z.object({
   firstName: z.string().min(2, 'First name must be at least 2 characters'),
@@ -50,7 +50,7 @@ export default function RegisterPage() {
     try {
       const { confirmPassword, ...registerData } = data;
       await registerUser(registerData);
-      router.push('/dashboard');
+      // Navigation is handled in AuthContext after successful registration
     } catch (error) {
       console.error('Registration failed:', error);
     }

@@ -2,7 +2,7 @@
 
 import { useAuth } from '../../contexts/AuthContext';
 import Link from 'next/link';
-import { UserRole } from '../../types/auth';
+import { UserRole } from '@BRIXA/api';
 
 export default function DashboardPage() {
   const { user, logout } = useAuth();

@@ -6,15 +6,21 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { apiClient } from '../../../../services/api';
-import { UserRole } from '../../../../types/auth';
+// import { apiClient } from '../../../../services/api';
+import { userService } from '../../../../services/user.service';
+import { UserRole } from '@BRIXA/api';
 
 const createUserSchema = z.object({
   firstName: z.string().min(2, 'First name must be at least 2 characters'),
   lastName: z.string().min(2, 'Last name must be at least 2 characters'),
   email: z.string().email('Please enter a valid email address'),
+  password: z.string()
+    .min(6, 'Password must be at least 6 characters')
+    .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
+    .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
+    .regex(/[0-9]/, 'Password must contain at least one number')
+    .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character'),
   role: z.nativeEnum(UserRole),
-  isActive: z.boolean().default(true),
 });
 
 type CreateUserFormData = z.infer<typeof createUserSchema>;
@@ -28,19 +34,19 @@ export default function CreateUserPage() {
     register,
     handleSubmit,
     formState: { errors },
+    watch,
   } = useForm<CreateUserFormData>({
     resolver: zodResolver(createUserSchema),
-    defaultValues: {
-      isActive: true,
-    },
   });
+
+  const password = watch('password');
 
   const onSubmit = async (data: CreateUserFormData) => {
     try {
       setIsLoading(true);
       setError(null);
       
-      await apiClient.createUser(data);
+      await userService.createUser(data);
       router.push('/admin/users');
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to create user';
@@ -169,6 +175,43 @@ export default function CreateUserPage() {
                   </div>
 
                   <div>
+                    <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                      Password
+                    </label>
+                    <input
+                      {...register('password')}
+                      type="password"
+                      id="password"
+                      className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    />
+                    {errors.password && (
+                      <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
+                    )}
+                    {password && (
+                      <div className="mt-2 text-xs text-gray-600">
+                        <p>Password must contain:</p>
+                        <ul className="list-disc list-inside mt-1">
+                          <li className={password.length >= 6 ? 'text-green-600' : 'text-red-600'}>
+                            At least 6 characters
+                          </li>
+                          <li className={/[A-Z]/.test(password) ? 'text-green-600' : 'text-red-600'}>
+                            One uppercase letter
+                          </li>
+                          <li className={/[a-z]/.test(password) ? 'text-green-600' : 'text-red-600'}>
+                            One lowercase letter
+                          </li>
+                          <li className={/[0-9]/.test(password) ? 'text-green-600' : 'text-red-600'}>
+                            One number
+                          </li>
+                          <li className={/[^A-Za-z0-9]/.test(password) ? 'text-green-600' : 'text-red-600'}>
+                            One special character
+                          </li>
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
                     <label htmlFor="role" className="block text-sm font-medium text-gray-700">
                       Role
                     </label>
@@ -187,18 +230,6 @@ export default function CreateUserPage() {
                     {errors.role && (
                       <p className="mt-1 text-sm text-red-600">{errors.role.message}</p>
                     )}
-                  </div>
-
-                  <div className="flex items-center">
-                    <input
-                      {...register('isActive')}
-                      type="checkbox"
-                      id="isActive"
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                    />
-                    <label htmlFor="isActive" className="ml-2 block text-sm text-gray-900">
-                      User is active
-                    </label>
                   </div>
 
                   <div className="flex justify-end space-x-3">
@@ -236,10 +267,10 @@ export default function CreateUserPage() {
                   <h3 className="text-sm font-medium text-blue-800">User Creation Notes</h3>
                   <div className="mt-2 text-sm text-blue-700">
                     <ul className="list-disc list-inside space-y-1">
-                      <li>The user will receive an email with login instructions</li>
-                      <li>They will be required to set their password on first login</li>
+                      <li>Users are created as active by default</li>
+                      <li>Password must meet security requirements</li>
                       <li>Role determines their access level and permissions</li>
-                      <li>Inactive users cannot log in until activated</li>
+                      <li>You can deactivate users later from the users list</li>
                     </ul>
                   </div>
                 </div>
