@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import Link from 'next/link';
-import { apiClient } from '../../services/api';
+import { authService } from '../../services/auth.service';
 
 const forgotPasswordSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -31,7 +31,7 @@ export default function ForgotPasswordPage() {
       setIsLoading(true);
       setError(null);
       
-      await apiClient.forgotPassword(data.email);
+      await authService.forgotPassword(data.email);
       setIsSuccess(true);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to send reset email';

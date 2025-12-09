@@ -7,12 +7,17 @@ import {
 import { DatabaseService } from '../database/database.service';
 import * as bcrypt from 'bcryptjs';
 import { ConfigService } from '@nestjs/config';
+import { CreateUserDto, UpdateUserDto } from '@BRIXA/api';
+import { SecurityService } from '../common/services/security.service';
+import { UserCacheService } from '../common/services/user-cache.service';
 
 @Injectable()
 export class AdminService {
   constructor(
     private db: DatabaseService,
     private configService: ConfigService,
+    private securityService: SecurityService,
+    private userCache: UserCacheService,
   ) { }
 
   async getUsers(page: number = 1, limit: number = 10) {
@@ -71,13 +76,7 @@ export class AdminService {
     return user;
   }
 
-  async createUser(data: {
-    email: string;
-    password: string;
-    firstName: string;
-    lastName: string;
-    role: string;
-  }) {
+  async createUser(data: CreateUserDto) {
     // Check if email already exists
     const existingUser = await this.db.client.user.findUnique({
       where: { email: data.email },
@@ -120,13 +119,7 @@ export class AdminService {
     return user;
   }
 
-  async updateUser(id: string, data: {
-    email?: string;
-    firstName?: string;
-    lastName?: string;
-    role?: string;
-    isActive?: boolean;
-  }) {
+  async updateUser(id: string, data: UpdateUserDto, currentUserId?: string) {
     // Check if user exists
     const existingUser = await this.db.client.user.findUnique({
       where: { id },
@@ -134,6 +127,26 @@ export class AdminService {
 
     if (!existingUser) {
       throw new NotFoundException('User not found');
+    }
+
+    // Prevent admin from changing their own role or deactivating themselves
+    if (currentUserId && id === currentUserId) {
+      if (data.role && data.role !== existingUser.role) {
+        throw new BadRequestException('You cannot change your own role');
+      }
+      if (data.isActive === false) {
+        throw new BadRequestException('You cannot deactivate yourself');
+      }
+    }
+
+    // Prevent removing the last admin
+    if (data.role && existingUser.role === 'ADMIN' && data.role !== 'ADMIN') {
+      const adminCount = await this.db.client.user.count({
+        where: { role: 'ADMIN', isActive: true },
+      });
+      if (adminCount <= 1) {
+        throw new BadRequestException('Cannot change role of the last active admin');
+      }
     }
 
     // Check if email is being changed and if it already exists
@@ -168,6 +181,9 @@ export class AdminService {
       },
     });
 
+    // Invalidate cache for this user
+    this.userCache.invalidate(id);
+
     return user;
   }
 
@@ -196,10 +212,13 @@ export class AdminService {
       where: { id },
     });
 
+    // Invalidate cache for this user
+    this.userCache.invalidate(id);
+
     return { message: 'User deleted successfully' };
   }
 
-  async resetUserPassword(id: string) {
+  async resetUserPassword(id: string, newPassword: string) {
     const user = await this.db.client.user.findUnique({
       where: { id },
     });
@@ -208,10 +227,15 @@ export class AdminService {
       throw new NotFoundException('User not found');
     }
 
-    // Generate a temporary password
-    const temporaryPassword = Math.random().toString(36).slice(-8);
+    // Validate password strength
+    const passwordValidation = this.securityService.validatePasswordStrength(newPassword);
+    if (!passwordValidation.isStrong) {
+      throw new BadRequestException(passwordValidation.errors.join(', '));
+    }
+
+    // Hash the new password
     const passwordHash = await bcrypt.hash(
-      temporaryPassword,
+      newPassword,
       this.configService.get<number>('BCRYPT_ROUNDS') || 10,
     );
 
@@ -222,7 +246,6 @@ export class AdminService {
 
     return {
       message: 'Password reset successfully',
-      temporaryPassword,
     };
   }
 
@@ -260,6 +283,9 @@ export class AdminService {
         updatedAt: true,
       },
     });
+
+    // Invalidate cache for this user
+    this.userCache.invalidate(id);
 
     return updatedUser;
   }

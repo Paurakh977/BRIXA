@@ -48,7 +48,7 @@ async function bootstrap() {
   const corsOrigin = configService.get<string>('CORS_ORIGIN') || 'http://localhost:3000';
   app.enableCors({
     origin: corsOrigin,
-    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE'],
+    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
     credentials: true,
     allowedHeaders: [
       'Content-Type',
@@ -56,7 +56,9 @@ async function bootstrap() {
       'X-Requested-With',
       'Accept',
       'Origin',
+      'Cookie',
     ],
+    exposedHeaders: ['Set-Cookie'],
     maxAge: 86400,
   });
 
