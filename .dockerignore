@@ -10,13 +10,20 @@ out
 coverage
 *.tsbuildinfo
 
+# Environment files (should not be copied into Docker images)
+.env
+.env.*
+!.env.example
+!env.docker.template
+**/.env
+**/.env.*
+!**/.env.example
+
 # Python
 __pycache__/
 *.py[cod]
 *.pyo
 *.pyd
-*.env
-.env.*
 venv/
 env/
 .venv/
