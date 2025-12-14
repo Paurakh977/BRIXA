@@ -1,0 +1,10 @@
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Node.js
+node_modules
+.next
+out
+*.log
