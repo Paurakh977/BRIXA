@@ -20,6 +20,14 @@ RUN pnpm install --frozen-lockfile
 COPY --from=builder /app/out/full/ .
 COPY turbo.json turbo.json
 
+# Accept build arguments needed for the build process
+ARG DATABASE_URL
+ARG NODE_ENV
+
+# Set environment variables for the build
+ENV DATABASE_URL=$DATABASE_URL
+ENV NODE_ENV=${NODE_ENV:-production}
+
 RUN pnpm turbo run build --filter=api...
 
 RUN pnpm deploy --filter=api --prod /prod/api
@@ -34,8 +42,27 @@ COPY --from=installer --chown=nestjs:nodejs /prod/api .
 
 USER nestjs
 
-EXPOSE 3000
+EXPOSE 8000
 
+# Accept build arguments
+ARG DATABASE_URL
+ARG CORS_ORIGIN
+ARG PORT
+ARG JWT_SECRET
+ARG JWT_REFRESH_SECRET
+ARG API_KEY
+ARG SESSION_SECRET
+ARG NODE_ENV
+
+# Set environment variables
 ENV DATABASE_URL=$DATABASE_URL
+ENV CORS_ORIGIN=$CORS_ORIGIN
+ENV APP_PORT=$PORT
+ENV PORT=$PORT
+ENV JWT_SECRET=$JWT_SECRET
+ENV JWT_REFRESH_SECRET=$JWT_REFRESH_SECRET
+ENV API_KEY=$API_KEY
+ENV SESSION_SECRET=$SESSION_SECRET
+ENV NODE_ENV=$NODE_ENV
 
 CMD sh -c "./node_modules/.bin/prisma migrate deploy --schema=node_modules/@BRIXA/database/prisma/schema/ --config=node_modules/@BRIXA/database/prisma.config.ts && node dist/main"

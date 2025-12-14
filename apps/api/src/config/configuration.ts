@@ -80,6 +80,36 @@ class EnvironmentVariables {
   @IsString()
   @IsOptional()
   LOG_LEVEL: string = 'debug';
+
+  @Expose()
+  @IsNumber()
+  @IsOptional()
+  CACHE_TTL_MS: number = 5 * 60 * 1000; // 5 minutes
+
+  @Expose()
+  @IsNumber()
+  @IsOptional()
+  CACHE_CLEANUP_INTERVAL_MS: number = 10 * 60 * 1000; // 10 minutes
+
+  @Expose()
+  @IsNumber()
+  @IsOptional()
+  COOKIE_ACCESS_TOKEN_MAX_AGE_MS: number = 15 * 60 * 1000; // 15 minutes
+
+  @Expose()
+  @IsNumber()
+  @IsOptional()
+  COOKIE_REFRESH_TOKEN_MAX_AGE_MS: number = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+  @Expose()
+  @IsNumber()
+  @IsOptional()
+  HSTS_MAX_AGE: number = 31536000; // 1 year in seconds
+
+  @Expose()
+  @IsNumber()
+  @IsOptional()
+  CORS_MAX_AGE: number = 86400; // 1 day in seconds
 }
 
 export function validate(config: Record<string, unknown>) {
@@ -145,9 +175,19 @@ export function configuration() {
     security: {
       bcryptRounds: parseInt(process.env.BCRYPT_ROUNDS, 10) || 10,
       sessionSecret: process.env.SESSION_SECRET,
+      hstsMaxAge: parseInt(process.env.HSTS_MAX_AGE, 10) || 31536000,
+      corsMaxAge: parseInt(process.env.CORS_MAX_AGE, 10) || 86400,
     },
     logging: {
       level: process.env.LOG_LEVEL || 'debug',
+    },
+    cache: {
+      ttlMs: parseInt(process.env.CACHE_TTL_MS, 10) || 5 * 60 * 1000,
+      cleanupIntervalMs: parseInt(process.env.CACHE_CLEANUP_INTERVAL_MS, 10) || 10 * 60 * 1000,
+    },
+    cookies: {
+      accessTokenMaxAgeMs: parseInt(process.env.COOKIE_ACCESS_TOKEN_MAX_AGE_MS, 10) || 15 * 60 * 1000,
+      refreshTokenMaxAgeMs: parseInt(process.env.COOKIE_REFRESH_TOKEN_MAX_AGE_MS, 10) || 7 * 24 * 60 * 60 * 1000,
     },
   };
 }
