@@ -1,20 +1,24 @@
 version: "3.9"
 
+# Docker Compose automatically loads .env file from the same directory
+# Create a .env file at the root with all the variables defined below
+# See .env.docker.example for a template
+
 services:
   brixa-db:
     image: postgres:16
     container_name: brixa-db
     restart: always
     environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: admin
-      POSTGRES_DB: brixa
+      POSTGRES_USER: ${POSTGRES_USER:-admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-admin}
+      POSTGRES_DB: ${POSTGRES_DB:-brixa}
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - brixa-db-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U admin -d brixa"] # or use $POSTGRES_DB
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-admin} -d ${POSTGRES_DB:-brixa}"]
       interval: 5s
       retries: 5
       start_period: 5s
@@ -24,33 +28,34 @@ services:
     container_name: brixa-pgadmin
     restart: always
     environment:
-      PGADMIN_DEFAULT_EMAIL: admin@admin.com
-      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@admin.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin}
     ports:
-      - "5050:80"
+      - "${PGADMIN_PORT:-5050}:80"
     depends_on:
       brixa-db:
         condition: service_healthy
     volumes:
       - brixa-pgadmin-data:/var/lib/pgadmin
 
-
-
-
   web:
     build:
       context: .
       dockerfile: apps/web/Dockerfile.prod
       args:
-        DATABASE_URL: postgresql://admin:admin@brixa-db:5432/brixa?schema=public
+        DATABASE_URL: postgresql://${POSTGRES_USER:-admin}:${POSTGRES_PASSWORD:-admin}@brixa-db:5432/${POSTGRES_DB:-brixa}?schema=public
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+        INTERNAL_API_URL: ${INTERNAL_API_URL}
     ports:
-      - "3000:3000"
+      - "${WEB_PORT:-3000}:3000"
     environment:
-      DATABASE_URL: postgresql://admin:admin@brixa-db:5432/brixa?schema=public
+      DATABASE_URL: postgresql://${POSTGRES_USER:-admin}:${POSTGRES_PASSWORD:-admin}@brixa-db:5432/${POSTGRES_DB:-brixa}?schema=public
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+      INTERNAL_API_URL: ${INTERNAL_API_URL}
+      JWT_SECRET: ${JWT_SECRET}
     depends_on:
       brixa-db:
         condition: service_healthy
-
 
   api:
     build:
@@ -58,15 +63,35 @@ services:
       dockerfile: apps/api/Dockerfile.prod
       target: runner
       args:
-        DATABASE_URL: postgresql://admin:admin@brixa-db:5432/brixa?schema=public
+        DATABASE_URL: postgresql://${POSTGRES_USER:-admin}:${POSTGRES_PASSWORD:-admin}@brixa-db:5432/${POSTGRES_DB:-brixa}?schema=public
+        CORS_ORIGIN: ${CORS_ORIGIN}
+        PORT: ${API_PORT:-8000}
+        JWT_SECRET: ${JWT_SECRET}
+        JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+        API_KEY: ${API_KEY}
+        SESSION_SECRET: ${SESSION_SECRET}
+        NODE_ENV: ${NODE_ENV:-production}
     ports:
-      - "8000:8000"
+      - "${API_PORT:-8000}:8000"
     environment:
-      DATABASE_URL: postgresql://admin:admin@brixa-db:5432/brixa?schema=public
+      DATABASE_URL: postgresql://${POSTGRES_USER:-admin}:${POSTGRES_PASSWORD:-admin}@brixa-db:5432/${POSTGRES_DB:-brixa}?schema=public
+      CORS_ORIGIN: ${CORS_ORIGIN}
+      APP_PORT: ${API_PORT:-8000}
+      APP_URL: ${API_URL}
+      NODE_ENV: ${NODE_ENV:-production}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      JWT_ACCESS_EXPIRATION: ${JWT_ACCESS_EXPIRATION:-10m}
+      JWT_REFRESH_EXPIRATION: ${JWT_REFRESH_EXPIRATION:-7d}
+      RATE_LIMIT_WINDOW_MS: ${RATE_LIMIT_WINDOW_MS:-900000}
+      RATE_LIMIT_MAX_REQUESTS: ${RATE_LIMIT_MAX_REQUESTS:-100}
+      API_KEY: ${API_KEY}
+      BCRYPT_ROUNDS: ${BCRYPT_ROUNDS:-10}
+      SESSION_SECRET: ${SESSION_SECRET}
+      LOG_LEVEL: ${LOG_LEVEL:-debug}
     depends_on:
       brixa-db:
         condition: service_healthy
-
 
 volumes:
   brixa-db-data:
