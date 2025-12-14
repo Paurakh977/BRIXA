@@ -15,6 +15,7 @@ async function bootstrap() {
   const logger = new Logger('Bootstrap');
   const configService = app.get(ConfigService);
 
+  const hstsMaxAge = configService.get<number>('HSTS_MAX_AGE') || 31536000; // 1 year in seconds
   app.use(
     helmet({
       contentSecurityPolicy: {
@@ -26,7 +27,7 @@ async function bootstrap() {
         },
       },
       hsts: {
-        maxAge: 31536000, // 1 year
+        maxAge: hstsMaxAge,
         includeSubDomains: true,
         preload: true,
       },
@@ -46,6 +47,7 @@ async function bootstrap() {
   app.use(cookieParser(sessionSecret));
 
   const corsOrigin = configService.get<string>('CORS_ORIGIN') || 'http://localhost:3000';
+  const corsMaxAge = configService.get<number>('CORS_MAX_AGE') || 86400; // 1 day in seconds
   app.enableCors({
     origin: corsOrigin,
     methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
@@ -59,7 +61,7 @@ async function bootstrap() {
       'Cookie',
     ],
     exposedHeaders: ['Set-Cookie'],
-    maxAge: 86400,
+    maxAge: corsMaxAge,
   });
 
   // 5. Global Validation Pipe

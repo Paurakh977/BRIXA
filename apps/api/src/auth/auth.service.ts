@@ -37,12 +37,13 @@ export class AuthService {
    */
   private getAccessTokenCookieOptions(): CookieOptions {
     const isProduction = this.configService.get<string>('NODE_ENV') === 'production';
+    const maxAge = this.configService.get<number>('COOKIE_ACCESS_TOKEN_MAX_AGE_MS') || 15 * 60 * 1000;
     return {
       httpOnly: false, // Client needs to read this for proactive refresh
       secure: isProduction,
       sameSite: 'lax',
       path: '/',
-      maxAge: 15 * 60 * 1000, // 15 minutes
+      maxAge,
     };
   }
 
@@ -52,12 +53,13 @@ export class AuthService {
    */
   private getRefreshTokenCookieOptions(): CookieOptions {
     const isProduction = this.configService.get<string>('NODE_ENV') === 'production';
+    const maxAge = this.configService.get<number>('COOKIE_REFRESH_TOKEN_MAX_AGE_MS') || 7 * 24 * 60 * 60 * 1000;
     return {
       httpOnly: true, // Secure - not accessible by JavaScript
       secure: isProduction,
       sameSite: 'lax',
       path: '/',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      maxAge,
     };
   }
 

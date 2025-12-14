@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 
 interface CachedUser {
   user: any;
@@ -13,11 +14,18 @@ interface CachedUser {
 @Injectable()
 export class UserCacheService {
   private userCache = new Map<string, CachedUser>();
-  private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes cache TTL
+  private readonly CACHE_TTL: number;
+  private readonly CLEANUP_INTERVAL: number;
 
-  constructor() {
-    // Clean up expired cache entries every 10 minutes
-    setInterval(() => this.cleanupCache(), 10 * 60 * 1000);
+  constructor(private configService: ConfigService) {
+    // Get cache TTL from environment or use default (5 minutes)
+    this.CACHE_TTL = this.configService.get<number>('CACHE_TTL_MS') || 5 * 60 * 1000;
+    
+    // Get cleanup interval from environment or use default (10 minutes)
+    this.CLEANUP_INTERVAL = this.configService.get<number>('CACHE_CLEANUP_INTERVAL_MS') || 10 * 60 * 1000;
+    
+    // Clean up expired cache entries at configured interval
+    setInterval(() => this.cleanupCache(), this.CLEANUP_INTERVAL);
   }
 
   /**
