@@ -161,7 +161,14 @@ export class AdminService {
 
     // Update user
     const updateData: any = { ...data };
-    if (data.role) {
+    
+    // CRITICAL: If role is being changed, increment tokenVersion
+    // This forces the user to get a new JWT with the updated role
+    // Without this, the frontend middleware sees the old role in JWT until token expires
+    if (data.role && data.role !== existingUser.role) {
+      updateData.role = data.role as any;
+      updateData.tokenVersion = { increment: 1 };
+    } else if (data.role) {
       updateData.role = data.role as any;
     }
 
@@ -239,10 +246,18 @@ export class AdminService {
       this.configService.get<number>('BCRYPT_ROUNDS') || 10,
     );
 
+    // CRITICAL: Increment tokenVersion to immediately invalidate ALL existing tokens
+    // This forces the user to re-login with the new password
     await this.db.client.user.update({
       where: { id },
-      data: { passwordHash },
+      data: { 
+        passwordHash,
+        tokenVersion: { increment: 1 },
+      },
     });
+
+    // Invalidate cache to ensure fresh data on next auth check
+    this.userCache.invalidate(id);
 
     return {
       message: 'Password reset successfully',
@@ -268,9 +283,16 @@ export class AdminService {
       }
     }
 
+    // CRITICAL: If deactivating user, increment tokenVersion for immediate token revocation
+    // This ensures the user is immediately logged out, not just after cache/DB validation interval
+    const updateData: { isActive: boolean; tokenVersion?: { increment: number } } = { isActive };
+    if (!isActive) {
+      updateData.tokenVersion = { increment: 1 };
+    }
+
     const updatedUser = await this.db.client.user.update({
       where: { id },
-      data: { isActive },
+      data: updateData,
       select: {
         id: true,
         email: true,
