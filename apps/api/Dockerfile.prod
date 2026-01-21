@@ -53,6 +53,8 @@ ARG JWT_REFRESH_SECRET
 ARG API_KEY
 ARG SESSION_SECRET
 ARG NODE_ENV
+ARG DB_VALIDATION_INTERVAL_MS
+
 
 # Set environment variables
 ENV DATABASE_URL=$DATABASE_URL
@@ -64,5 +66,6 @@ ENV JWT_REFRESH_SECRET=$JWT_REFRESH_SECRET
 ENV API_KEY=$API_KEY
 ENV SESSION_SECRET=$SESSION_SECRET
 ENV NODE_ENV=$NODE_ENV
+ENV DB_VALIDATION_INTERVAL_MS=$DB_VALIDATION_INTERVAL_MS
 
 CMD sh -c "./node_modules/.bin/prisma migrate deploy --schema=node_modules/@BRIXA/database/prisma/schema/ --config=node_modules/@BRIXA/database/prisma.config.ts && node dist/main"
