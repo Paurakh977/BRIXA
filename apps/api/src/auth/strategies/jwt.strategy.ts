@@ -26,27 +26,62 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
 
   /**
    * Get user from cache or database
-   * CRITICAL: Always invalidates cache first to ensure fresh data when roles change
+   * CRITICAL SECURITY: Periodically validates user exists in database
+   * 
+   * Security layers:
+   * 1. Cache TTL (5 min default) - Data freshness
+   * 2. DB Validation Interval (1 min default) - User existence check
+   * 3. Token Version - Revocation check
    */
-  private async getUserFromCacheOrDb(userId: string, payloadRole?: string): Promise<any> {
-    // CRITICAL: If role is provided in payload, check if cached role matches
-    // If roles don't match, invalidate cache to force fresh DB read
+  private async getUserFromCacheOrDb(userId: string, payloadRole?: string, payloadTokenVersion?: number): Promise<any> {
+    // Check cache first
     const cached = this.userCache.get(userId);
-    if (cached && payloadRole) {
-      if (cached.user.role !== payloadRole) {
-        // Role mismatch - cache is stale, invalidate it
+    
+    if (cached) {
+      // CRITICAL: Even with cache hit, verify tokenVersion matches
+      if (payloadTokenVersion !== undefined && cached.user.tokenVersion !== payloadTokenVersion) {
         this.userCache.invalidate(userId);
+        throw new UnauthorizedException('Token has been revoked');
+      }
+      
+      // CRITICAL: Check if cached role matches payload role
+      if (payloadRole && cached.user.role !== payloadRole) {
+        // Role mismatch - cache might be stale, force DB refresh
+        this.userCache.invalidate(userId);
+      } 
+      // CRITICAL: Periodic DB validation to catch deleted users
+      else if (this.userCache.needsDbValidation(userId)) {
+        // Time to verify user still exists in DB
+        const userExists = await this.db.client.user.findUnique({
+          where: { id: userId },
+          select: { id: true, isActive: true, tokenVersion: true },
+        });
+        
+        if (!userExists) {
+          this.userCache.invalidate(userId);
+          throw new UnauthorizedException('User not found');
+        }
+        
+        if (!userExists.isActive) {
+          this.userCache.invalidate(userId);
+          throw new UnauthorizedException('User account is inactive');
+        }
+        
+        if (payloadTokenVersion !== undefined && payloadTokenVersion !== userExists.tokenVersion) {
+          this.userCache.invalidate(userId);
+          throw new UnauthorizedException('Token has been revoked');
+        }
+        
+        // Update validation timestamp
+        this.userCache.updateDbValidationTime(userId);
+        return cached.user;
+      } else {
+        // Cache hit with matching data and recent validation
+        return cached.user;
       }
     }
 
-    // Check cache again (might have been invalidated above)
-    const cachedAfterCheck = this.userCache.get(userId);
-    if (cachedAfterCheck) {
-      // Cache hit - return cached user
-      return cachedAfterCheck.user;
-    }
-
-    // Cache miss - fetch from database
+    // Cache miss OR cache invalidated - MUST fetch from database
     const user = await this.db.client.user.findUnique({
       where: { id: userId },
       select: {
@@ -60,14 +95,20 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
         role: true,
         isVerified: true,
         isActive: true,
+        tokenVersion: true,
         createdAt: true,
         updatedAt: true,
-        // Explicitly exclude passwordHash
       },
     });
 
+    // CRITICAL: User not found in database = unauthorized
     if (!user) {
       throw new UnauthorizedException('User not found');
+    }
+
+    // CRITICAL: Verify token version matches database
+    if (payloadTokenVersion !== undefined && payloadTokenVersion !== user.tokenVersion) {
+      throw new UnauthorizedException('Token has been revoked');
     }
 
     // Update cache with fresh data
@@ -90,10 +131,11 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
       throw new UnauthorizedException('Invalid token payload: missing email');
     }
 
-    // CRITICAL: Pass role from JWT payload to detect stale cache
+    // CRITICAL: Pass role and tokenVersion from JWT payload to detect stale cache
     // If cached role doesn't match payload role, cache is stale and will be invalidated
     const payloadRole = payload.role;
-    const user = await this.getUserFromCacheOrDb(userId, payloadRole);
+    const payloadTokenVersion = payload.tokenVersion;
+    const user = await this.getUserFromCacheOrDb(userId, payloadRole, payloadTokenVersion);
 
     // CRITICAL: Use role from database (fresh), not from JWT payload (might be stale)
     // This ensures role changes are immediately reflected even with old tokens

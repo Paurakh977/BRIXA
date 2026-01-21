@@ -94,6 +94,11 @@ class EnvironmentVariables {
   @Expose()
   @IsNumber()
   @IsOptional()
+  DB_VALIDATION_INTERVAL_MS: number = 60 * 1000; // 1 minute
+
+  @Expose()
+  @IsNumber()
+  @IsOptional()
   COOKIE_ACCESS_TOKEN_MAX_AGE_MS: number = 15 * 60 * 1000; // 15 minutes
 
   @Expose()
@@ -184,6 +189,7 @@ export function configuration() {
     cache: {
       ttlMs: parseInt(process.env.CACHE_TTL_MS, 10) || 5 * 60 * 1000,
       cleanupIntervalMs: parseInt(process.env.CACHE_CLEANUP_INTERVAL_MS, 10) || 10 * 60 * 1000,
+      dbValidationIntervalMs: parseInt(process.env.DB_VALIDATION_INTERVAL_MS, 10) || 60 * 1000,
     },
     cookies: {
       accessTokenMaxAgeMs: parseInt(process.env.COOKIE_ACCESS_TOKEN_MAX_AGE_MS, 10) || 15 * 60 * 1000,

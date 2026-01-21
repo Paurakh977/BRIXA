@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -9,6 +9,7 @@ import Link from 'next/link';
 // import { apiClient } from '../../../../services/api';
 import { userService } from '../../../../services/user.service';
 import { UserRole } from '@BRIXA/api';
+import { useAuth } from '../../../../contexts/AuthContext';
 
 const createUserSchema = z.object({
   firstName: z.string().min(2, 'First name must be at least 2 characters'),
@@ -27,8 +28,20 @@ type CreateUserFormData = z.infer<typeof createUserSchema>;
 
 export default function CreateUserPage() {
   const router = useRouter();
+  const { user, isLoading: authLoading, isAuthenticated } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // CRITICAL: Redirect if not authenticated or not admin
+  useEffect(() => {
+    if (!authLoading) {
+      if (!isAuthenticated) {
+        router.push('/login');
+      } else if (user && user.role !== 'ADMIN') {
+        router.push('/dashboard');
+      }
+    }
+  }, [authLoading, isAuthenticated, user, router]);
 
   const {
     register,
@@ -40,6 +53,18 @@ export default function CreateUserPage() {
   });
 
   const password = watch('password');
+
+  // Show loading while checking auth
+  if (authLoading || !user || user.role !== 'ADMIN') {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   const onSubmit = async (data: CreateUserFormData) => {
     try {

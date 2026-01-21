@@ -2,9 +2,46 @@
 
 import { useAuth } from '../../contexts/AuthContext';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 export default function AdminOverviewPage() {
-  const { user } = useAuth();
+  const { user, isLoading, isAuthenticated } = useAuth();
+  const router = useRouter();
+
+  // CRITICAL: Redirect if not authenticated or not admin
+  useEffect(() => {
+    if (!isLoading) {
+      if (!isAuthenticated) {
+        router.push('/login');
+      } else if (user && user.role !== 'ADMIN') {
+        router.push('/dashboard');
+      }
+    }
+  }, [isLoading, isAuthenticated, user, router]);
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render if not admin
+  if (!user || user.role !== 'ADMIN') {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-600">Checking permissions...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">

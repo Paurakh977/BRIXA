@@ -54,6 +54,14 @@ export class AuthController {
     return this.authService.logout(res);
   }
 
+  @Post('logout-all')
+  logoutAll(
+    @GetUser() user: User,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    return this.authService.logoutAll(user.id, res);
+  }
+
   // For Protected Route - Returns full user data (requires DB lookup)
   @Get('me')
   getProfile(@GetUser() user: User) {

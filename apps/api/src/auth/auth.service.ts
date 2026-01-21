@@ -9,7 +9,7 @@ import { DatabaseService } from '../database/database.service';
 import { LoginDto, RegisterDto } from '@BRIXA/api';
 import * as bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
-import { Response, Request } from 'express';
+import type { Response, Request } from 'express';
 import { SecurityService } from '../common/services/security.service';
 import { UserCacheService } from '../common/services/user-cache.service';
 
@@ -100,7 +100,7 @@ export class AuthService {
     // This ensures role changes are immediately reflected on next login
     const user = await this.db.client.user.findUnique({
       where: { email: dto.email },
-      select: { id: true, email: true, role: true, isActive: true, passwordHash: true },
+      select: { id: true, email: true, role: true, isActive: true, passwordHash: true, tokenVersion: true },
     });
 
     if (!user) throw new BadRequestException('Invalid credentials');
@@ -130,7 +130,7 @@ export class AuthService {
     // This prevents stale role issues when roles are updated while user is logged in
     const user = await this.db.client.user.findUnique({
       where: { id: userId },
-      select: { id: true, email: true, role: true, isActive: true },
+      select: { id: true, email: true, role: true, isActive: true, tokenVersion: true },
     });
 
     if (!user) {
@@ -142,8 +142,14 @@ export class AuthService {
     }
 
     // Use the fresh role from database, not the passed parameter
+    // Include tokenVersion to enable token revocation
     const freshRole = user.role;
-    const payload = { sub: userId, email: user.email, role: freshRole };
+    const payload = { 
+      sub: userId, 
+      email: user.email, 
+      role: freshRole,
+      tokenVersion: user.tokenVersion, // CRITICAL: Include token version for revocation
+    };
 
     const accessExpiration =
       this.configService.get<string>('JWT_ACCESS_EXPIRATION') || '15m';
@@ -193,7 +199,7 @@ export class AuthService {
       // This ensures role changes are immediately reflected
       const user = await this.db.client.user.findUnique({
         where: { id: payload.sub },
-        select: { id: true, email: true, role: true, isActive: true },
+        select: { id: true, email: true, role: true, isActive: true, tokenVersion: true },
       });
 
       if (!user) {
@@ -202,6 +208,12 @@ export class AuthService {
 
       if (!user.isActive) {
         throw new UnauthorizedException('User account is inactive');
+      }
+
+      // CRITICAL: Verify token version matches - if not, token has been revoked
+      // This happens when user logs out from all devices, changes password, or is deleted
+      if (payload.tokenVersion !== undefined && payload.tokenVersion !== user.tokenVersion) {
+        throw new UnauthorizedException('Token has been revoked');
       }
 
       // signToken will also invalidate cache and read fresh from DB, but we do it here too for safety
@@ -239,6 +251,32 @@ export class AuthService {
     });
 
     return { message: 'Logged out successfully' };
+  }
+
+  /**
+   * Invalidate all tokens for a user by incrementing their tokenVersion
+   * Use this when: password changes, logout from all devices, security breach suspected
+   */
+  async invalidateAllUserTokens(userId: string): Promise<void> {
+    // Increment tokenVersion - all existing tokens with old version will be rejected
+    await this.db.client.user.update({
+      where: { id: userId },
+      data: { tokenVersion: { increment: 1 } },
+    });
+    
+    // Also clear the in-memory cache for this user
+    this.userCache.invalidate(userId);
+  }
+
+  /**
+   * Logout from all devices by invalidating all tokens
+   */
+  async logoutAll(userId: string, res: Response) {
+    // Invalidate all tokens for this user
+    await this.invalidateAllUserTokens(userId);
+    
+    // Also clear current session cookies
+    return this.logout(res);
   }
 
   decodeRefreshToken(refreshToken: string): any {

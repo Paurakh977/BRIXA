@@ -57,18 +57,31 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           });
         } catch (error) {
           console.error('Failed to fetch user profile:', error);
-          // Token exists but might be expired/invalid. Try to refresh.
+          // Token exists but might be expired/invalid OR user doesn't exist. Try to refresh.
           try {
             // Server response will update the cookie automatically
             const refreshResponse = await authService.refreshToken();
             if (refreshResponse) {
-              const user = await authService.getProfile();
-              setState({
-                user,
-                isLoading: false,
-                isAuthenticated: true,
-                error: null,
-              });
+              try {
+                const user = await authService.getProfile();
+                setState({
+                  user,
+                  isLoading: false,
+                  isAuthenticated: true,
+                  error: null,
+                });
+              } catch (profileError) {
+                // CRITICAL: Refresh succeeded but profile fetch failed
+                // This means user was deleted from DB - clean up completely
+                console.error('Profile fetch failed after refresh:', profileError);
+                Cookies.remove('access_token', { path: '/' });
+                setState({
+                  user: null,
+                  isLoading: false,
+                  isAuthenticated: false,
+                  error: null,
+                });
+              }
             } else {
               throw new Error('Refresh failed');
             }
@@ -90,13 +103,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           const refreshResponse = await authService.refreshToken();
           if (refreshResponse) {
             // Success! We are logged in.
-            const user = await authService.getProfile();
-            setState({
-              user,
-              isLoading: false,
-              isAuthenticated: true,
-              error: null,
-            });
+            try {
+              const user = await authService.getProfile();
+              setState({
+                user,
+                isLoading: false,
+                isAuthenticated: true,
+                error: null,
+              });
+            } catch (profileError) {
+              // CRITICAL: Refresh succeeded but profile fetch failed
+              // User may have been deleted - clean up
+              console.error('Profile fetch failed after refresh:', profileError);
+              Cookies.remove('access_token', { path: '/' });
+              setState({
+                user: null,
+                isLoading: false,
+                isAuthenticated: false,
+                error: null,
+              });
+            }
           } else {
             setState(prev => ({ ...prev, isLoading: false }));
           }

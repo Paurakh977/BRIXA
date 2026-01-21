@@ -3,9 +3,42 @@
 import { useAuth } from '../../contexts/AuthContext';
 import Link from 'next/link';
 import { UserRole } from '@BRIXA/api';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 export default function DashboardPage() {
-  const { user, logout } = useAuth();
+  const { user, logout, isLoading, isAuthenticated } = useAuth();
+  const router = useRouter();
+
+  // CRITICAL: Redirect to login if not authenticated and not loading
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      router.push('/login');
+    }
+  }, [isLoading, isAuthenticated, router]);
+
+  // Show loading state while checking authentication
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // CRITICAL: Don't render dashboard content if user is null
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-600">Redirecting to login...</p>
+        </div>
+      </div>
+    );
+  }
 
   const getDashboardContent = () => {
     if (!user) return null;
@@ -135,10 +168,10 @@ export default function DashboardPage() {
           <div className="px-4 py-6 sm:px-0">
             <div className="mb-8">
               <h1 className="text-3xl font-bold text-gray-900">
-                Welcome back, {user?.firstName}!
+                Welcome back, {user.firstName}!
               </h1>
               <p className="mt-2 text-gray-600">
-                Role: <span className="font-medium">{user?.role.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</span>
+                Role: <span className="font-medium">{user.role?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Unknown'}</span>
               </p>
             </div>
             

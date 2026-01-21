@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
+import { useRouter } from 'next/navigation';
 // import { apiClient } from '../../../services/api';
 import { userService } from '../../../services/user.service';
 import { UserRole } from '@BRIXA/api';
@@ -20,13 +21,25 @@ interface User {
 }
 
 export default function AdminUsersPage() {
-  const { user } = useAuth();
+  const { user, isLoading: authLoading, isAuthenticated } = useAuth();
+  const router = useRouter();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalUsers, setTotalUsers] = useState(0);
+
+  // CRITICAL: Redirect if not authenticated or not admin
+  useEffect(() => {
+    if (!authLoading) {
+      if (!isAuthenticated) {
+        router.push('/login');
+      } else if (user && user.role !== 'ADMIN') {
+        router.push('/dashboard');
+      }
+    }
+  }, [authLoading, isAuthenticated, user, router]);
 
   const fetchUsers = async (page = 1) => {
     try {
