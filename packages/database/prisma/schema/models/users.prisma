@@ -13,6 +13,9 @@ model User {
   isVerified    Boolean   @default(false)
   isActive      Boolean   @default(true)
   
+  // Token version for invalidating all existing tokens (incremented on password change, logout-all, etc.)
+  tokenVersion  Int       @default(0)
+  
   // KYC
   kycRecord     KYCRecord?
   
